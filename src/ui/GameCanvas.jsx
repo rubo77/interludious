@@ -5,6 +5,7 @@ import { Bunker } from '../game/bunker.js';
 import { Bullet } from '../game/bullet.js';
 import { Button } from '../game/button.js';
 import { Slider } from '../game/slider.js';
+import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
@@ -24,6 +25,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
   const [buttons, setButtons] = useState([]);
   const [sliders, setSliders] = useState([]);
   const [score, setScore] = useState(0);
+  const [screenShake, setScreenShake] = useState({ x: 0, y: 0, intensity: 0 });
+  const particleSystem = useRef(new ParticleSystem());
   const [lives, setLives] = useState(3);
   const [currentLevel, setCurrentLevel] = useState(levelProp || 1);
   const [gameState, setGameState] = useState('playing'); // playing, levelcomplete, gameover, docking
@@ -177,6 +180,10 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       }
       if (keys['ArrowUp'] || keys['w'] || keys['W']) {
         ship.setThrust(true);
+        // Spawn thrust particles
+        const thrustX = ship.x - Math.sin(ship.angle) * 15;
+        const thrustY = ship.y + Math.cos(ship.angle) * 15;
+        particleSystem.current.spawnThrust(thrustX, thrustY, ship.angle);
       } else {
         ship.setThrust(false);
       }
@@ -192,6 +199,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         const collisionResult = collision.current.checkShipCollision(ship, level);
         if (collisionResult.collided) {
           collision.current.resolveCollision(ship, collisionResult);
+          particleSystem.current.spawnSparks(ship.x, ship.y, 5);
+          setScreenShake({ x: 0, y: 0, intensity: 3 });
         }
       }
 
@@ -290,6 +299,20 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         sliders.forEach(slider => {
           slider.update(deltaTime);
         });
+
+        // Update screen shake
+        if (screenShake.intensity > 0) {
+          const shakeX = (Math.random() - 0.5) * screenShake.intensity;
+          const shakeY = (Math.random() - 0.5) * screenShake.intensity;
+          setScreenShake(prev => ({
+            x: shakeX,
+            y: shakeY,
+            intensity: Math.max(0, prev.intensity - 0.5)
+          }));
+        }
+
+        // Update particles
+        particleSystem.current.update(deltaTime);
       }
 
       // Update bullets and check collision with ship
@@ -304,6 +327,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
           const distance = Math.sqrt(dx * dx + dy * dy);
           if (distance < 15) {
             // Ship hit by bullet
+            particleSystem.current.spawnExplosion(ship.x, ship.y, 30, '#ff6600');
+            setScreenShake({ x: 0, y: 0, intensity: 10 });
             setLives(prevLives => {
               const newLives = prevLives - 1;
               if (newLives <= 0) {
@@ -406,6 +431,12 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       // Clear canvas
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, width, height);
+
+      // Apply screen shake
+      ctx.save();
+      if (screenShake.intensity > 0) {
+        ctx.translate(screenShake.x, screenShake.y);
+      }
 
       // Draw level with camera offset
       if (level && tilesetLoaded) {
@@ -563,6 +594,14 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         }
       }
 
+      // Restore screen shake
+      if (screenShake.intensity > 0) {
+        ctx.restore();
+      }
+
+      // Render particles
+      particleSystem.current.render(ctx, camera.x, camera.y);
+
       // Boundary collision (wrap around)
       if (ship.x < 0) ship.x = width;
       if (ship.x > width) ship.x = 0;
@@ -577,7 +616,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera, pod, restartPosition, gameState, dockingAnimation, score, lives, currentLevel, onLevelComplete, onGameOver, onScoreChange, bunkers, bullets, buttons, sliders]);
+  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera, pod, restartPosition, gameState, dockingAnimation, score, lives, currentLevel, onLevelComplete, onGameOver, onScoreChange, bunkers, bullets, buttons, sliders, screenShake]);
 
   return (
     <canvas
