@@ -11,6 +11,7 @@ Port the dulsi/thrust C64 clone to a modern web application using HTML5 Canvas +
 - **Physics**: Ported C physics engine to JavaScript
 - **Audio**: Web Audio API (replaces SDL sound)
 - **Build**: Vite (fast dev server, bundling)
+- **Testing**: Vitest (unit tests), Playwright (E2E tests)
 - **Mobile Wrapper**: Capacitor (iOS + Android native apps with WebView)
 - **Touch Controls**: Virtual joystick + buttons for mobile
 - **Gravity Sensor**: DeviceOrientation/DeviceMotion API for tilt-based control (optional)
@@ -39,6 +40,14 @@ Port the dulsi/thrust C64 clone to a modern web application using HTML5 Canvas +
 │   │   ├── game-loop.js      # requestAnimationFrame loop
 │   │   ├── game-state.js     # Score, lives, level progression
 │   │   └── constants.js      # Game constants (port from thrust_t.h)
+│   ├── levels/
+│   │   ├── level-parser.js   # Parse level files (def/JSON)
+│   │   ├── level-validator.js # Validate level syntax and structure
+│   │   └── level-loader.js   # Load and cache levels
+│   ├── editor/
+│   │   ├── LevelEditor.jsx   # Visual level editor component
+│   │   ├── tile-palette.jsx  # Tile selection palette
+│   │   └── level-exporter.js # Export levels to def/JSON
 │   ├── ui/
 │   │   ├── App.jsx           # Main React component
 │   │   ├── GameCanvas.jsx    # Canvas component
@@ -46,6 +55,16 @@ Port the dulsi/thrust C64 clone to a modern web application using HTML5 Canvas +
 │   │   ├── HUD.jsx           # Score, fuel display
 │   │   └── TouchControls.jsx # Virtual joystick overlay
 │   └── main.jsx              # Entry point
+├── tests/
+│   ├── unit/
+│   │   ├── physics.test.js      # Physics engine tests
+│   │   ├── level-parser.test.js # Level parsing tests
+│   │   ├── game-objects.test.js # Game objects tests
+│   │   └── collision.test.js    # Collision detection tests
+│   ├── integration/
+│   │   └── game-loop.test.js    # Game loop integration tests
+│   └── e2e/
+│       └── gameplay.spec.js     # Playwright E2E tests
 ├── public/
 │   └── assets/
 │       ├── sprites/          # Converted sprite images
@@ -119,100 +138,248 @@ Port:
 
 ## Implementation Phases
 
-### Phase 1: Foundation (Core Physics)
-1. Set up React + Vite project
-2. Create Canvas renderer component
-3. Port level parser from `level.c`
-4. Implement basic ship physics (gravity, thrust, rotation)
-5. Add keyboard input handling
+### Phase 1: Foundation (Core Physics) - TDD
+1. Set up React + Vite project with Vitest
+2. Design modular level format (JSON or enhanced .def with metadata)
+3. Write unit tests for level parser (def file parsing)
+4. Implement level parser to pass tests (modular, extensible)
+5. Write unit tests for level validation (syntax, dimensions, required elements)
+6. Implement level validation to pass tests
+7. Write unit tests for physics engine (gravity, thrust, rotation)
+8. Implement physics engine to pass tests
+9. Write unit tests for keyboard input handling
+10. Implement keyboard input to pass tests
+11. Create Canvas renderer component
+12. Write integration test: ship flies in level with gravity
 
-**Deliverable**: Ship can fly in a level with gravity
+**Deliverable**: Ship can fly in a level with gravity, all tests pass, modular level system
 
-### Phase 2: Game Objects
-1. Port `things.c` structures to JavaScript
-2. Implement bunker types and shooting logic
-3. Add button/slider system
-4. Implement fuel pickup
-5. Add pod pickup and towing physics
+### Phase 2: Game Objects - TDD
+1. Write unit tests for game object structures (thing, slider, bullet, fragment)
+2. Implement game object structures to pass tests
+3. Write unit tests for bunker types and shooting logic
+4. Implement bunker types and shooting to pass tests
+5. Write unit tests for button/slider system
+6. Implement button/slider system to pass tests
+7. Write unit tests for fuel pickup
+8. Implement fuel pickup to pass tests
+9. Write unit tests for pod pickup and towing physics
+10. Implement pod pickup and towing to pass tests
+11. Write integration test: bunkers shoot, buttons work, pod tows
 
-**Deliverable**: Complete game objects with interactions
+**Deliverable**: Complete game objects with interactions, all tests pass
 
-### Phase 3: Modern Graphics & Effects
-1. Create modern vector-based or high-res sprite assets (ship, pod, bunkers, bullets)
-2. Implement smooth antialiased rendering on Canvas
-3. Add particle effects (explosions, engine flame with glow)
-4. Implement shield visual effect with transparency/glow
-5. Add tractor beam visualization with smooth gradients
-6. Create modern tileset for level walls (smooth edges, gradients)
+### Phase 3: Modern Graphics & Effects - TDD
+1. Write unit tests for sprite loading and rendering
+2. Create modern vector-based or high-res sprite assets (ship, pod, bunkers, bullets)
+3. Implement sprite loading to pass tests
+4. Write unit tests for particle system (explosions, engine flame)
+5. Implement particle system to pass tests
+6. Write unit tests for shield visual effect
+7. Implement shield effect with transparency/glow to pass tests
+8. Write unit tests for tractor beam visualization
+9. Implement tractor beam with smooth gradients to pass tests
+10. Create modern tileset for level walls (smooth edges, gradients)
+11. Write integration test: sprites render, effects play correctly
 
-**Deliverable**: Modern, polished graphics with antialiasing
+**Deliverable**: Modern, polished graphics with antialiasing, all tests pass
 
-### Phase 4: Audio
-1. Convert sound files from `.snd` to Web Audio format
-2. Implement Web Audio API sound engine
-3. Add engine thrust sound
-4. Add shooting, explosion, pickup sounds
-5. Add background music (optional)
+### Phase 4: Audio - TDD
+1. Write unit tests for Web Audio API sound engine
+2. Convert sound files from `.snd` to Web Audio format
+3. Implement Web Audio API sound engine to pass tests
+4. Write unit tests for sound playback (engine, shooting, explosion, pickup)
+5. Add engine thrust sound to pass tests
+6. Add shooting, explosion, pickup sounds to pass tests
+7. Add background music (optional) with tests
+8. Write integration test: sounds play correctly in game context
 
-**Deliverable**: Complete audio experience
+**Deliverable**: Complete audio experience, all tests pass
 
-### Phase 5: Game Loop & UI
-1. Implement proper game loop with requestAnimationFrame
-2. Add scoring system
-3. Add lives and game over logic
-4. Create main menu and level selection
-5. Add HUD (fuel, score, shield status)
+### Phase 5: Game Loop & UI - TDD
+1. Write unit tests for game loop (requestAnimationFrame, delta time)
+2. Implement game loop to pass tests
+3. Write unit tests for scoring system
+4. Implement scoring system to pass tests
+5. Write unit tests for lives and game over logic
+6. Implement lives and game over to pass tests
+7. Write unit tests for game state management
+8. Implement game state to pass tests
+9. Write unit tests for React UI components (Menu, HUD)
+10. Create main menu and level selection to pass tests
+11. Add HUD (fuel, score, shield status) to pass tests
+12. Write integration test: full game loop works from start to game over
 
-**Deliverable**: Complete playable game
+**Deliverable**: Complete playable game, all tests pass
 
-### Phase 6: Mobile & Cross-Platform
-1. Add all 6 original levels
-2. Implement high score system (localStorage)
-3. Add virtual joystick + touch controls (REQUIRED for mobile)
-4. Implement gravity sensor control (DeviceOrientation/DeviceMotion API)
-5. Add control settings menu (keyboard/touch/gravity selection)
-6. Implement responsive canvas sizing for different screen sizes
-7. Add device orientation lock (landscape only)
-8. Add prevent-default for touch events (no zoom/scroll)
-9. Performance optimization for mobile devices
-10. Cross-browser and cross-device testing
+### Phase 6: Mobile & Cross-Platform - TDD
+1. Write unit tests for level loading (all 6 levels)
+2. Add all 6 original levels to pass tests
+3. Write unit tests for high score system (localStorage)
+4. Implement high score system to pass tests
+5. Write unit tests for virtual joystick + touch controls
+6. Implement virtual joystick + touch controls to pass tests
+7. Write unit tests for gravity sensor control (DeviceOrientation/DeviceMotion API)
+8. Implement gravity sensor control to pass tests
+9. Write unit tests for control settings menu
+10. Add control settings menu (keyboard/touch/gravity selection) to pass tests
+11. Write unit tests for responsive canvas sizing
+12. Implement responsive canvas sizing to pass tests
+13. Write integration tests for mobile features (touch, gravity, responsive)
+14. Add device orientation lock (landscape only)
+15. Add prevent-default for touch events (no zoom/scroll)
+16. Performance optimization for mobile devices
+17. Cross-browser and cross-device testing
+18. Set up Playwright for E2E testing
+19. Write E2E tests for core gameplay (ship flies, pod pickup, level completion)
+20. Configure Playwright for visual debugging (headed mode, trace viewer, video recording)
 
-**Deliverable**: Web app ready for mobile browsers
+**Deliverable**: Web app ready for mobile browsers, all tests pass
 
-### Phase 7: Capacitor Setup (Native Apps)
-1. Install and configure Capacitor
-2. Set up iOS project (Xcode configuration)
-3. Set up Android project (Android Studio configuration)
-4. Configure app icons and splash screens
-5. Set up app metadata (name, version, bundle ID)
-6. Configure permissions (if needed)
-7. Test in iOS Simulator
-8. Test on Android Emulator
+### Phase 7: Capacitor Setup (Native Apps) - TDD
+1. Write unit tests for Capacitor plugin integrations
+2. Install and configure Capacitor to pass tests
+3. Write integration tests for iOS-specific features
+4. Set up iOS project (Xcode configuration) to pass tests
+5. Write integration tests for Android-specific features
+6. Set up Android project (Android Studio configuration) to pass tests
+7. Configure app icons and splash screens
+8. Set up app metadata (name, version, bundle ID)
+9. Configure permissions (if needed)
+10. Write E2E tests for native app features (back button, lifecycle)
+11. Test in iOS Simulator
+12. Test on Android Emulator
 
-**Deliverable**: Native iOS and Android projects configured
+**Deliverable**: Native iOS and Android projects configured, all tests pass
 
-### Phase 8: Native App Polish
-1. Implement native back button handling (Android)
-2. Add native app lifecycle handling (pause/resume)
-3. Optimize for mobile performance (reduce memory usage)
-4. Add haptic feedback for collisions/pickups
-5. Test on real iOS devices
-6. Test on real Android devices
-7. Fix platform-specific bugs
+### Phase 8: Native App Polish - TDD
+1. Write unit tests for native back button handling (Android)
+2. Implement native back button handling to pass tests
+3. Write unit tests for native app lifecycle handling (pause/resume)
+4. Add native app lifecycle handling to pass tests
+5. Write unit tests for haptic feedback system
+6. Add haptic feedback for collisions/pickups to pass tests
+7. Write performance tests for mobile optimization
+8. Optimize for mobile performance (reduce memory usage) to pass performance tests
+9. Write E2E tests for native features on real devices
+10. Test on real iOS devices
+11. Test on real Android devices
+12. Fix platform-specific bugs
 
-**Deliverable**: Production-ready native apps
+**Deliverable**: Production-ready native apps, all tests pass
 
-### Phase 9: App Store Deployment
-1. Prepare screenshots and app store descriptions
-2. Configure iOS App Store Connect metadata
-3. Configure Google Play Store metadata
-4. Create app icons for all required sizes
-5. Generate signed APK/AAB for Android
-6. Generate IPA for iOS
-7. Submit to Apple App Store
-8. Submit to Google Play Store
+### Phase 9: App Store Deployment - TDD
+1. Write tests for build scripts (APK/AAB generation, IPA generation)
+2. Prepare screenshots and app store descriptions
+3. Configure iOS App Store Connect metadata
+4. Configure Google Play Store metadata
+5. Create app icons for all required sizes
+6. Generate signed APK/AAB for Android (validate with tests)
+7. Generate IPA for iOS (validate with tests)
+8. Write smoke tests for generated builds
+9. Submit to Apple App Store
+10. Submit to Google Play Store
 
-**Deliverable**: Apps published to both stores
+**Deliverable**: Apps published to both stores, build tests pass
+
+### Phase 10: Level Editor (Optional, Parallel to Phase 6-9)
+1. Write unit tests for level editor state management
+2. Implement visual level editor component to pass tests
+3. Write unit tests for tile palette and placement
+4. Implement tile palette and placement to pass tests
+5. Write unit tests for level export (def/JSON)
+6. Implement level export to pass tests
+7. Write unit tests for level import and validation
+8. Implement level import and validation to pass tests
+9. Add undo/redo functionality for level editing
+10. Add level preview mode (test level in editor)
+11. Write integration tests: create level in editor, export, import, play
+
+**Deliverable**: Functional level editor for creating and modifying levels
+
+## Level System Design
+
+### Modular Level Format
+Levels are stored as separate files with clear structure:
+
+**Format Options:**
+1. **Enhanced .def** (backward compatible with original)
+   - Keep ASCII art layout
+   - Add metadata section (name, author, difficulty, colors)
+   - Add custom properties section
+
+2. **JSON Format** (modern, extensible)
+   - Structured data with validation
+   - Easy to parse and modify
+   - Support for custom properties
+
+**Recommended:** Support both formats for maximum flexibility
+
+### Level Structure
+```
+public/levels/
+├── level1.def          # Original level 1
+├── level2.def          # Original level 2
+├── level3.def          # Original level 3
+├── level4.def          # Original level 4
+├── level5.def          # Original level 5
+├── level6.def          # Original level 6
+├── custom/
+│   ├── my_level_1.def  # User-created level
+│   ├── my_level_2.json # User-created level (JSON)
+│   └── community/      # Community levels
+└── templates/
+    ├── easy_template.def
+    ├── medium_template.def
+    └── hard_template.def
+```
+
+### Level Metadata (Enhanced Format)
+```def
+# Metadata section
+NAME: "Crystal Caves"
+AUTHOR: "Player"
+DIFFICULTY: 3
+VERSION: 1.0
+DESCRIPTION: "Navigate through crystal formations"
+
+# Colors
+BG_COLOR: 189 24 33
+GUN_COLOR: 24 211 24
+POD_COLOR: 24 211 24
+TEXT_COLOR: 0 164 0
+SHIELD_COLOR: 49 231 198
+
+# Level dimensions
+WIDTH: 82
+HEIGHT: 60
+START_HEIGHT: 17
+EMPTY_HEIGHT: 5
+BEDROCK_HEIGHT: 25
+
+# Level layout (ASCII art)
+...
+```
+
+### Level Validation
+The level validator checks:
+- Required fields present
+- Valid dimensions (within min/max)
+- Valid color values (0-255)
+- Required elements (at least one restart point, one pod)
+- Valid character codes in layout
+- No overlapping objects
+- Slider-button connections valid
+
+### Level Editor Features
+- **Visual Grid:** Click to place tiles
+- **Tile Palette:** All available tiles (walls, bunkers, buttons, sliders, fuel, pod)
+- **Undo/Redo:** Full history support
+- **Preview Mode:** Test level without leaving editor
+- **Export/Import:** Save as .def or JSON
+- **Validation:** Real-time error checking
+- **Templates:** Start from blank or existing templates
+- **Community Sharing:** Export/import for sharing levels
 
 ## Asset Creation
 
@@ -316,7 +483,7 @@ Each phase produces a working, testable component:
 ### Clear Dependencies
 - Phase 2 depends on Phase 1 (physics needed for game objects)
 - Phase 3 depends on Phase 2 (objects needed for rendering)
-- Phase 4 is independent (can be done in parallel)
+- Phase 4 is independent (can be done in parallel with Phase 2-3)
 - Phase 5 depends on Phase 2-3 (game loop needs objects + rendering)
 - Phase 6 depends on Phase 5 (mobile needs working game)
 - Phase 7 depends on Phase 6 (Capacitor needs web app)
@@ -324,16 +491,16 @@ Each phase produces a working, testable component:
 - Phase 9 depends on Phase 8 (deployment needs polished apps)
 
 ### Testable Milestones
-After each phase, run the game to verify:
-- Phase 1: Ship flies, gravity works
-- Phase 2: Bunkers shoot, buttons work, pod tows
-- Phase 3: Sprites render, effects play
-- Phase 4: Sounds play correctly
-- Phase 5: Full game loop works
-- Phase 6: Touch/gravity controls work on mobile
-- Phase 7: Native apps build and run
-- Phase 8: Native apps polished
-- Phase 9: Apps submitted to stores
+After each phase, run tests and game to verify:
+- Phase 1: Unit tests pass (physics, level parser, input), ship flies, gravity works
+- Phase 2: Unit tests pass (game objects, bunkers, buttons, pod), bunkers shoot, buttons work, pod tows
+- Phase 3: Unit tests pass (sprites, particles, effects), sprites render, effects play
+- Phase 4: Unit tests pass (audio engine, sounds), sounds play correctly
+- Phase 5: Unit tests pass (game loop, scoring, UI), full game loop works
+- Phase 6: Unit tests pass (mobile features), E2E tests pass, touch/gravity controls work on mobile
+- Phase 7: Unit tests pass (Capacitor), native apps build and run
+- Phase 8: Unit tests pass (native features, performance), native apps polished
+- Phase 9: Build tests pass, apps submitted to stores
 
 ## Advantages of This Approach
 1. **Maximum Code Reuse**: ~70-80% of game logic can be ported directly
