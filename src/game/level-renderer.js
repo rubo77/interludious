@@ -1,7 +1,7 @@
 // Level renderer for rendering level layout
 export class LevelRenderer {
   constructor() {
-    this.tileSize = 8; // Original Thrust uses 8 units per pixel
+    this.tileSize = 16; // Scaled for better visibility (was 8)
   }
 
   render(ctx, level, offsetX = 0, offsetY = 0) {
@@ -25,7 +25,7 @@ export class LevelRenderer {
 
   renderTile(ctx, tile, x, y) {
     switch (tile) {
-      case '#': // Solid wall
+      case '#': // Solid wall (fallback)
         ctx.fillStyle = '#666666';
         ctx.fillRect(x, y, this.tileSize, this.tileSize);
         ctx.strokeStyle = '#888888';
@@ -55,6 +55,32 @@ export class LevelRenderer {
       case 'd': // Power plant
         ctx.fillStyle = '#ff00ff';
         ctx.fillRect(x + 1, y + 1, this.tileSize - 2, this.tileSize - 2);
+        break;
+
+      // Thrust platform tiles (p, q, r, s, t - different heights)
+      case 'p': // Platform - lowest
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(x, y + this.tileSize - 2, this.tileSize, 2);
+        break;
+
+      case 'q': // Platform - low
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(x, y + this.tileSize - 3, this.tileSize, 3);
+        break;
+
+      case 'r': // Platform - medium
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(x, y + this.tileSize - 4, this.tileSize, 4);
+        break;
+
+      case 's': // Platform - high
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(x, y + this.tileSize - 5, this.tileSize, 5);
+        break;
+
+      case 't': // Platform - highest
+        ctx.fillStyle = '#888888';
+        ctx.fillRect(x, y + this.tileSize - 6, this.tileSize, 6);
         break;
 
       default:
@@ -87,7 +113,7 @@ export class LevelRenderer {
   }
 
   isWall(tile) {
-    return tile === '#';
+    return tile === '#' || ['p', 'q', 'r', 's', 't'].includes(tile);
   }
 
   getTileAt(level, x, y) {

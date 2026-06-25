@@ -8,6 +8,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
   const [ship] = useState(() => new Ship(width / 2, height / 2));
   const [keys, setKeys] = useState({});
   const [level, setLevel] = useState(null);
+  const [camera, setCamera] = useState({ x: 0, y: 0 });
   const levelLoader = useRef(new LevelLoader());
   const levelRenderer = useRef(new LevelRenderer());
 
@@ -34,11 +35,19 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
       try {
         const levelContent = await levelLoader.current.loadLevel('level1');
         const lines = levelContent.split('\n');
-        const layout = lines.filter(line => line.trim() && !line.trim().startsWith('#'));
+        // Filter out empty lines and comments, but keep the ASCII layout
+        // The layout starts after the metadata (first ~10 lines)
+        const layout = lines.filter(line => {
+          const trimmed = line.trim();
+          return trimmed.length > 0 && 
+                 !trimmed.startsWith(';') && 
+                 !trimmed.match(/^\d+\s*;/); // Skip metadata lines like "82 ; width"
+        });
+        
         setLevel({ layout, width: layout[0]?.length || 0, height: layout.length || 0 });
       } catch (error) {
         console.error('Failed to load level:', error);
-        // Create simple test level
+        // Create simple test level with platforms
         const layout = [
           '####################',
           '#                  #',
@@ -49,7 +58,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
           '#                  #',
           '#                  #',
           '#                  #',
-          '#                  #',
+          '#pppppppppppppppppp#',
           '#                  #',
           '#                  #',
           '#                  #',
@@ -90,6 +99,21 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
       // Update ship
       ship.update(1);
 
+      // Update camera to follow ship
+      if (level) {
+        const levelWidth = level.width * levelRenderer.current.tileSize;
+        const levelHeight = level.height * levelRenderer.current.tileSize;
+        
+        // Center camera on ship, clamping to level bounds
+        const targetX = ship.x - width / 2;
+        const targetY = ship.y - height / 2;
+        
+        setCamera({
+          x: Math.max(0, Math.min(targetX, levelWidth - width)),
+          y: Math.max(0, Math.min(targetY, levelHeight - height))
+        });
+      }
+
       // Report fuel to parent
       if (onFuelChange) {
         onFuelChange(ship.fuel);
@@ -99,14 +123,17 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, width, height);
 
-      // Draw level
+      // Draw level with camera offset
       if (level) {
+        ctx.save();
+        ctx.translate(-camera.x, -camera.y);
         levelRenderer.current.render(ctx, level);
+        ctx.restore();
       }
 
-      // Draw ship
+      // Draw ship with camera offset
       ctx.save();
-      ctx.translate(ship.x, ship.y);
+      ctx.translate(ship.x - camera.x, ship.y - camera.y);
       ctx.rotate(ship.angle);
 
       // Ship body

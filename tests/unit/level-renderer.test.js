@@ -20,8 +20,8 @@ describe('Level Renderer', () => {
     };
   });
 
-  it('should create renderer with tile size 8', () => {
-    expect(renderer.tileSize).toBe(8);
+  it('should create renderer with tile size 16', () => {
+    expect(renderer.tileSize).toBe(16);
   });
 
   it('should render wall tile', () => {
@@ -29,14 +29,14 @@ describe('Level Renderer', () => {
     renderer.renderTile(mockCtx, '#', 0, 0);
     
     expect(mockCtx.fillStyle).toBe('#666666');
-    expect(mockCtx.fillRect).toHaveBeenCalledWith(0, 0, 8, 8);
+    expect(mockCtx.fillRect).toHaveBeenCalledWith(0, 0, 16, 16);
   });
 
   it('should render restart point', () => {
     const level = { layout: ['*'] };
     renderer.renderTile(mockCtx, '*', 0, 0);
     
-    expect(mockCtx.fillRect).toHaveBeenCalledWith(0, 0, 8, 8);
+    expect(mockCtx.fillRect).toHaveBeenCalledWith(0, 0, 16, 16);
     expect(mockCtx.fillText).toHaveBeenCalled();
   });
 
@@ -105,12 +105,17 @@ describe('Level Renderer', () => {
 
   it('should identify wall tiles', () => {
     expect(renderer.isWall('#')).toBe(true);
+    expect(renderer.isWall('p')).toBe(true);
+    expect(renderer.isWall('q')).toBe(true);
+    expect(renderer.isWall('r')).toBe(true);
+    expect(renderer.isWall('s')).toBe(true);
+    expect(renderer.isWall('t')).toBe(true);
     expect(renderer.isWall(' ')).toBe(false);
   });
 
   it('should get tile at position', () => {
     const level = { layout: ['# ', ' #'] };
-    const tile = renderer.getTileAt(level, 4, 4);
+    const tile = renderer.getTileAt(level, 8, 8);
     
     expect(tile).toBe('#');
   });
@@ -126,8 +131,8 @@ describe('Level Renderer', () => {
     const level = { layout: ['#  ', '  #'] };
     const dims = renderer.getLevelDimensions(level);
     
-    expect(dims.width).toBe(24);
-    expect(dims.height).toBe(16);
+    expect(dims.width).toBe(48);
+    expect(dims.height).toBe(32);
   });
 
   it('should render level layout', () => {
