@@ -16,10 +16,13 @@
     "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/ios": "^8.4.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.4.1",
     "@eslint/js": "^9.13.0",
     "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.6.3",
