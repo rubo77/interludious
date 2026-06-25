@@ -5,7 +5,7 @@ import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
 
-export default function GameCanvas({ width = 800, height = 600, onFuelChange }) {
+export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange }) {
   const canvasRef = useRef(null);
   const [ship] = useState(() => new Ship(width / 2, height / 2));
   const [keys, setKeys] = useState({});
@@ -14,6 +14,11 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
   const [tilesetLoaded, setTilesetLoaded] = useState(false);
   const [pod, setPod] = useState(null);
   const [podPosition, setPodPosition] = useState(null);
+  const [restartPosition, setRestartPosition] = useState(null);
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [gameState, setGameState] = useState('playing'); // playing, levelcomplete, gameover
   const levelLoader = useRef(new LevelLoader());
   const tileRenderer = useRef(new TileRenderer());
   const collision = useRef(new CollisionDetection(tileRenderer.current));
@@ -68,25 +73,34 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
         // Pad each row to full level width so tiles align
         layout = layout.map(row => row.padEnd(lenx, ' '));
 
-        // Find pod position (character 'm')
+        // Find pod position (character 'm') and restart point (character '*')
         let podPos = null;
+        let restartPos = null;
         const scaledSize = 16; // TileRenderer scale
         for (let y = 0; y < layout.length; y++) {
           for (let x = 0; x < layout[y].length; x++) {
             if (layout[y][x] === 'm') {
               podPos = { x: x * scaledSize + scaledSize / 2, y: y * scaledSize + scaledSize / 2 };
-              break;
+            }
+            if (layout[y][x] === '*' && !restartPos) {
+              restartPos = { x: x * scaledSize + scaledSize / 2, y: y * scaledSize + scaledSize / 2 };
             }
           }
-          if (podPos) break;
+          if (podPos && restartPos) break;
         }
 
         console.log('[LEVEL] Loaded level1:', layout.length, 'rows x', lenx, 'cols');
         console.log('[POD] Position:', podPos);
+        console.log('[RESTART] Position:', restartPos);
         setLevel({ layout, width: lenx, height: layout.length });
         setPodPosition(podPos);
+        setRestartPosition(restartPos);
         if (podPos) {
           setPod(new Pod(podPos.x, podPos.y));
+        }
+        if (restartPos) {
+          ship.setPosition(restartPos.x, restartPos.y);
+          ship.setVelocity(0, 0);
         }
       } catch (error) {
         console.error('[LEVEL] Failed to load:', error);
@@ -149,6 +163,64 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
           pod.setTowing(false);
         }
         pod.update(1);
+
+        // Win condition: pod delivered to restart point
+        if (restartPosition) {
+          const distanceToRestart = Math.sqrt(
+            (pod.x - restartPosition.x) ** 2 + (pod.y - restartPosition.y) ** 2
+          );
+          if (distanceToRestart < 20 && !pod.towed) {
+            // Level complete
+            setGameState('levelcomplete');
+            if (onLevelComplete) onLevelComplete(currentLevel);
+          }
+        }
+      }
+
+      // Lose condition: fuel empty
+      if (ship.fuel <= 0) {
+        setLives(prev => {
+          const newLives = prev - 1;
+          if (newLives <= 0) {
+            setGameState('gameover');
+            if (onGameOver) onGameOver(score);
+          } else {
+            // Respawn at restart point
+            if (restartPosition) {
+              ship.setPosition(restartPosition.x, restartPosition.y);
+              ship.setVelocity(0, 0);
+              ship.fuel = 100;
+            }
+            if (pod && podPosition) {
+              pod.setPosition(podPosition.x, podPosition.y);
+              pod.setVelocity(0, 0);
+            }
+          }
+          return newLives;
+        });
+      }
+
+      // Check for fuel pickup
+      if (level && tilesetLoaded) {
+        const scaledSize = tileRenderer.current.getScaledTileSize();
+        const shipTileX = Math.floor(ship.x / scaledSize);
+        const shipTileY = Math.floor(ship.y / scaledSize);
+        if (shipTileY >= 0 && shipTileY < level.layout.length) {
+          const row = level.layout[shipTileY];
+          if (shipTileX >= 0 && shipTileX < row.length) {
+            if (row[shipTileX] === '`') {
+              ship.fuel = Math.min(100, ship.fuel + 25);
+              // Remove fuel pickup from layout (simple implementation)
+              const newLayout = [...level.layout];
+              const newRow = newLayout[shipTileY].split('');
+              newRow[shipTileX] = ' ';
+              newLayout[shipTileY] = newRow.join('');
+              setLevel({ ...level, layout: newLayout });
+              setScore(prev => prev + 10);
+              if (onScoreChange) onScoreChange(score + 10);
+            }
+          }
+        }
       }
 
       // Update camera to follow ship
@@ -265,7 +337,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera, pod]);
+  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera, pod, restartPosition, gameState, score, lives, currentLevel, onLevelComplete, onGameOver, onScoreChange]);
 
   return (
     <canvas

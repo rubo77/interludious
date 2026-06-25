@@ -18,6 +18,20 @@ function App() {
     setFuel(100);
   };
 
+  const handleLevelComplete = (completedLevel) => {
+    setScore(prev => prev + 100);
+    setLevel(prev => prev + 1);
+    setGameState('playing');
+  };
+
+  const handleGameOver = (finalScore) => {
+    setGameState('gameover');
+  };
+
+  const handleScoreChange = (newScore) => {
+    setScore(newScore);
+  };
+
   return (
     <div className="app" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', backgroundColor: '#000', color: '#fff' }}>
       {gameState === 'menu' && (
@@ -27,7 +41,27 @@ function App() {
       {gameState === 'playing' && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '20px' }}>
           <HUD score={score} lives={lives} level={level} fuel={fuel} />
-          <GameCanvas width={800} height={600} onFuelChange={setFuel} />
+          <GameCanvas 
+            width={800} 
+            height={600} 
+            onFuelChange={setFuel} 
+            onLevelComplete={handleLevelComplete}
+            onGameOver={handleGameOver}
+            onScoreChange={handleScoreChange}
+          />
+          <button onClick={() => setGameState('menu')} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+            Back to Menu
+          </button>
+        </div>
+      )}
+
+      {gameState === 'gameover' && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '20px' }}>
+          <h1>Game Over</h1>
+          <p>Final Score: {score}</p>
+          <button onClick={handleStartGame} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+            Play Again
+          </button>
           <button onClick={() => setGameState('menu')} style={{ padding: '10px 20px', cursor: 'pointer' }}>
             Back to Menu
           </button>
