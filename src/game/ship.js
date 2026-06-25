@@ -13,23 +13,23 @@ export class Ship {
 
   update(dt, gravity = 0.05) {
     // Apply gravity
-    this.vy += gravity;
+    this.vy += gravity * dt;
 
     // Apply thrust
     if (this.thrust > 0) {
-      const thrustPower = 0.3;
+      const thrustPower = 0.3 * dt;
       this.vx += Math.sin(this.angle) * thrustPower;
       this.vy -= Math.cos(this.angle) * thrustPower;
-      this.fuel -= 0.1;
+      this.fuel -= 0.1 * dt;
     }
 
     // Update position
-    this.x += this.vx;
-    this.y += this.vy;
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
 
     // Friction
-    this.vx *= 0.99;
-    this.vy *= 0.99;
+    this.vx *= Math.pow(0.99, dt);
+    this.vy *= Math.pow(0.99, dt);
 
     // Clamp fuel
     if (this.fuel < 0) this.fuel = 0;

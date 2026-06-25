@@ -115,12 +115,21 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
+    // Enable anti-aliasing and smooth rendering
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
     let animationId;
+    let lastTime = performance.now();
 
     const render = () => {
+      const currentTime = performance.now();
+      const deltaTime = (currentTime - lastTime) / 16.67; // Normalize to 1.0 at 60fps
+      lastTime = currentTime;
+
       // Handle input
       if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
         ship.rotateLeft();
@@ -138,7 +147,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       const tractorBeamActive = keys[' '] || keys['Space'];
 
       // Update ship
-      ship.update(1);
+      ship.update(deltaTime);
 
       // Check collision with level
       if (level && tilesetLoaded) {
@@ -163,7 +172,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         } else {
           pod.setTowing(false);
         }
-        pod.update(1);
+        pod.update(deltaTime);
 
         // Win condition: pod delivered to restart point
         if (restartPosition && gameState === 'playing') {
@@ -258,20 +267,25 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         }
       }
 
-      // Update camera to follow ship
+      // Update camera to follow ship with smooth interpolation
       if (level) {
         const scaledSize = tileRenderer.current.getScaledTileSize();
         const levelWidth = level.width * scaledSize;
         const levelHeight = level.height * scaledSize;
 
-        // Center camera on ship, clamping to level bounds
+        // Target camera position (center on ship)
         const targetX = ship.x - width / 2;
         const targetY = ship.y - height / 2;
 
-        setCamera({
-          x: Math.max(0, Math.min(targetX, Math.max(0, levelWidth - width))),
-          y: Math.max(0, Math.min(targetY, Math.max(0, levelHeight - height)))
-        });
+        // Smooth camera interpolation (lerp)
+        const lerpFactor = 0.1;
+        const clampedTargetX = Math.max(0, Math.min(targetX, Math.max(0, levelWidth - width)));
+        const clampedTargetY = Math.max(0, Math.min(targetY, Math.max(0, levelHeight - height)));
+        
+        setCamera(prev => ({
+          x: prev.x + (clampedTargetX - prev.x) * lerpFactor,
+          y: prev.y + (clampedTargetY - prev.y) * lerpFactor
+        }));
       }
 
       // Report fuel to parent

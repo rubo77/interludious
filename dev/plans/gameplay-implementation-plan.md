@@ -1,145 +1,197 @@
-# Gameplay Implementation Plan
+# Gameplay Implementation Plan - Modernization & Polish
 
 ## Current Status (Completed)
 - ✅ Phase 1-10: All original phases completed
 - ✅ UI Implementation: Menu, HUD, GameCanvas components
 - ✅ Ship Implementation: Physics, rendering, keyboard control
-- ✅ Level Rendering: Basic LevelRenderer created
+- ✅ Level Rendering: Original Thrust tileset with pixel-perfect rendering
 - ✅ Level Loading: Original .def files imported
 - ✅ High Score System: localStorage persistence
 - ✅ Playwright E2E: Tests configured
 - ✅ Native Projects: iOS and Android generated
+- ✅ Task 1-4: Core gameplay mechanics (Level Rendering, Collision, Pod Towing, Game Loop)
+- ✅ Task 5: Pod Docking Animation
+- ✅ Task 6: Level Selection Buttons
 
-## Remaining Tasks
+## Remaining Tasks: Modernization & Original Feature Parity
 
-### Task 1: Level Rendering - Wände und Level-Layout anzeigen
-
-**Problem**: Current level rendering shows only points, not proper walls. The original Thrust format uses p/q/r/s/t tiles for platforms with different heights.
+### Task 7: Anti-aliasing & Smooth Rendering
+**Goal**: Modern, smooth graphics with anti-aliasing
 
 **Steps**:
-1. Update LevelRenderer to render p/q/r/s/t platform tiles correctly
-   - p: Platform - lowest (2px height)
-   - q: Platform - low (3px height)
-   - r: Platform - medium (4px height)
-   - s: Platform - high (5px height)
-   - t: Platform - highest (6px height)
-2. Update isWall() method to treat platforms as collision surfaces
-3. Update GameCanvas level loading to parse .def format correctly
-   - Skip metadata lines (comments, dimensions)
-   - Extract ASCII layout only
-4. Add tests for platform rendering
-5. Scale tile size appropriately for visibility (increase from 8px to 16px or 32px)
-6. Add camera/viewport to handle large level sizes (82x60 tiles)
-7. Commit: Level rendering with proper platform tiles
+1. Enable anti-aliasing for Canvas rendering
+   - Set `imageSmoothingEnabled = true` on Canvas context
+   - Use `imageSmoothingQuality = 'high'`
+   - Enable sub-pixel rendering
+2. Improve frame rate consistency
+   - Use delta time for physics calculations
+   - Implement fixed time step for physics
+   - Add frame rate limiting
+3. Smooth camera movement
+   - Add camera interpolation (lerp) instead of instant following
+   - Add camera damping for smooth transitions
+4. Smooth ship rotation
+   - Add rotation interpolation
+   - Smooth thrust animation
+5. Commit: Anti-aliased smooth rendering
 
 **Files to modify**:
-- `src/game/level-renderer.js` - Add platform rendering, fix isWall()
-- `src/ui/GameCanvas.jsx` - Fix level loading, add camera/viewport
-- `tests/unit/level-renderer.test.js` - Add platform tile tests
+- `src/ui/GameCanvas.jsx` - Enable anti-aliasing, smooth camera, smooth rotation
+- `src/game/ship.js` - Add delta time physics
 
-### Task 2: Kollisionserkennung - Schiff kollidiert mit Wänden
-
-**Steps**:
-1. Complete CollisionDetection class implementation
-2. Add platform collision (p/q/r/s/t tiles are solid)
-3. Implement proper collision response
-   - Bounce ship off walls
-   - Stop ship velocity on collision
-   - Push ship back out of wall
-4. Integrate collision detection in GameCanvas render loop
-5. Add visual feedback on collision (flash or sound)
-6. Write tests for collision with platforms
-7. Commit: Ship collides with walls and platforms
-
-**Files to modify**:
-- `src/physics/collision.js` - Complete implementation, add platform support
-- `src/ui/GameCanvas.jsx` - Integrate collision detection
-- `tests/unit/collision.test.js` - Add platform collision tests
-
-### Task 3: Pod Towing - Das Schiff kann den Pod schleppen
+### Task 8: Bunkers & Bullets (Original Feature Parity)
+**Goal**: Implement bunkers that shoot at the ship
 
 **Steps**:
-1. Create Pod class with physics
-   - Position, velocity, towing state
-   - Gravity affects pod when not towing
-2. Implement tractor beam mechanics
-   - Detect when ship is near pod
-   - Activate tractor beam with key press (Space)
-   - Pull pod towards ship when towing
-3. Implement pod collision with walls
-   - Pod bounces off walls
-   - Pod gets stuck if pushed into wall
-4. Visual effects for tractor beam
-   - Draw beam line between ship and pod
-   - Glowing effect when towing
-5. Add pod rendering in GameCanvas
-6. Write tests for pod physics and towing
-7. Commit: Pod can be picked up and towed
+1. Create Bunker class
+   - Position, type, shooting cooldown
+   - Bullet spawning
+   - Aim at ship
+2. Create Bullet class
+   - Position, velocity, owner
+   - Collision detection
+   - Render bullet sprites
+3. Add bunker positions from level (P, U, [, \ characters)
+4. Implement bunker shooting logic
+   - Bunkers aim at ship
+   - Fire bullets at intervals
+   - Bullets travel in straight lines
+5. Implement bullet collision with ship
+   - Ship loses life when hit
+   - Explosion effect
+6. Add bunker rendering with original sprites
+7. Commit: Bunkers and bullets
 
 **Files to create**:
-- `src/game/pod.js` - Pod class with physics
-- `tests/unit/pod.test.js` - Pod unit tests
+- `src/game/bunker.js` - Bunker class
+- `src/game/bullet.js` - Bullet class
+- `tests/unit/bunker.test.js` - Bunker tests
+- `tests/unit/bullet.test.js` - Bullet tests
 
 **Files to modify**:
-- `src/ui/GameCanvas.jsx` - Add pod rendering and tractor beam
-- `src/physics/collision.js` - Add pod collision
+- `src/ui/GameCanvas.jsx` - Add bunker and bullet rendering/logic
+- `src/physics/collision.js` - Add bullet collision
 
-### Task 4: Game Loop - Vollständiges Gameplay mit Level-Progression
+### Task 9: Buttons & Sliders (Original Feature Parity)
+**Goal**: Implement interactive buttons and sliders
 
 **Steps**:
-1. Implement level progression system
-   - Track current level (1-6)
-   - Load next level on completion
-   - Score tracking per level
-2. Implement win condition with pod docking
-   - Deliver pod to restart point (*)
-   - Pod must dock (stop and attach to restart point)
-   - Screen scrolls up when pod docks
-   - Pod flies up into the sky on level complete
-   - Advance to next level after animation
-3. Implement lose condition
-   - Ship hits bunker bullet
-   - Ship hits dangerous object
-   - Fuel runs out
-   - Lives decrement
-   - Game over after 3 lives
-4. Implement fuel system
-   - Fuel decreases when thrusting
-   - Collect fuel from `` tiles
-   - Game over if fuel runs out
-5. Implement restart points
-   - Ship respawns at * on death
-   - Pod resets to m position
-6. Implement bunker shooting (optional for basic gameplay)
-   - Bunkers shoot bullets at ship
-   - Ship can be hit by bullets
-7. Integrate all systems in GameCanvas
-8. Add game state management (menu, playing, level complete, game over)
-9. Add level selection buttons on right side
-   - Direct level start buttons
-   - Display level numbers
-   - Show completion status
-10. Write integration tests for complete gameplay
-11. Commit: Complete gameplay with level progression and pod docking animation
+1. Create Button class
+   - Position, type, tag
+   - State (pressed/released)
+   - Slider connection
+2. Create Slider class
+   - Position, type, direction
+   - Movement logic
+   - Button connection
+3. Load button positions from level (L, N characters)
+4. Load slider positions from level (@-K characters)
+5. Implement button collision with ship
+   - Ship can activate buttons
+   - Trigger slider movement
+6. Implement slider movement
+   - Sliders move when button pressed
+   - Create/open paths
+7. Add button and slider rendering
+8. Commit: Buttons and sliders
+
+**Files to create**:
+- `src/game/button.js` - Button class
+- `src/game/slider.js` - Slider class
+- `tests/unit/button.test.js` - Button tests
+- `tests/unit/slider.test.js` - Slider tests
 
 **Files to modify**:
-- `src/ui/GameCanvas.jsx` - Integrate all game systems, add pod docking animation
-- `src/ui/App.jsx` - Add game state management, add level selection buttons
-- `src/game/game-state.js` - Add level progression logic
-- `tests/integration/gameplay-integration.test.js` - Integration tests
+- `src/ui/GameCanvas.jsx` - Add button and slider rendering/logic
+
+### Task 10: Particle Effects & Polish
+**Goal**: Add modern particle effects for explosions and visual polish
+
+**Steps**:
+1. Create Particle class
+   - Position, velocity, lifetime
+   - Color, size, type
+   - Update and render
+2. Create ParticleSystem class
+   - Manage particle pool
+   - Spawn explosions
+   - Spawn thrust particles
+   - Spawn spark effects
+3. Add explosion effects
+   - Ship explosion when hit
+   - Bunker explosion when destroyed
+   - Pod docking effect
+4. Add thrust particles
+   - Particle trail behind ship
+   - Vary particle colors based on thrust
+5. Add spark effects
+   - Collision sparks
+   - Bullet impact sparks
+6. Implement screen shake
+   - Shake on collision
+   - Shake on explosion
+7. Add visual polish
+   - Glow effects
+   - Smooth transitions
+   - Modern color palette
+8. Commit: Particle effects and visual polish
+
+**Files to create**:
+- `src/game/particle.js` - Particle class
+- `src/game/particle-system.js` - ParticleSystem class
+- `tests/unit/particle.test.js` - Particle tests
+
+**Files to modify**:
+- `src/ui/GameCanvas.jsx` - Add particle rendering and effects
+- `src/game/ship.js` - Add thrust particle spawning
+
+### Task 11: Modern UI Styling
+**Goal**: Modern, sleek UI design
+
+**Steps**:
+1. Update HUD styling
+   - Modern fonts
+   - Smooth gradients
+   - Glass morphism effect
+   - Animated bars
+2. Update Menu styling
+   - Modern layout
+   - Hover effects
+   - Smooth transitions
+3. Update Level Selection buttons
+   - Modern design
+   - Hover animations
+   - Progress indicators
+4. Add loading screen
+   - Animated loading
+   - Progress bar
+5. Add pause menu
+   - Blur effect
+   - Overlay design
+6. Add victory/defeat screens
+   - Animated effects
+   - Score display
+7. Commit: Modern UI styling
+
+**Files to modify**:
+- `src/ui/HUD.jsx` - Modern styling
+- `src/ui/Menu.jsx` - Modern styling
+- `src/ui/GameCanvas.jsx` - Add loading/pause screens
+- `src/App.jsx` - Add victory/defeat screens
 
 ## Implementation Order
-1. Task 1: Level Rendering (fix display issues first)
-2. Task 2: Collision Detection (walls must work before pod)
-3. Task 3: Pod Towing (core mechanic)
-4. Task 4: Game Loop (tie everything together)
+1. Task 7: Anti-aliasing & Smooth Rendering (visual foundation)
+2. Task 8: Bunkers & Bullets (core original feature)
+3. Task 9: Buttons & Sliders (core original feature)
+4. Task 10: Particle Effects & Polish (visual polish)
+5. Task 11: Modern UI Styling (final polish)
 
 ## Success Criteria
-- ✅ Levels display with proper platform tiles
-- ✅ Ship collides with walls and bounces appropriately
-- ✅ Pod can be picked up and towed with tractor beam
-- ✅ Player can complete levels and progress through all 6 levels
-- ✅ Fuel system works (thrust consumes fuel, collect fuel)
-- ✅ Lives system works (3 lives, respawn at restart point)
-- ✅ Score tracking works
-- ✅ All tests pass
+- ✅ Anti-aliased smooth rendering
+- ✅ Bunkers shoot at ship with bullets
+- ✅ Buttons activate sliders
+- ✅ Particle effects for explosions and thrust
+- ✅ Modern, sleek UI design
+- ✅ Game feels smooth and responsive
+- ✅ All original Thrust features implemented
+- ✅ Modern visual polish throughout
