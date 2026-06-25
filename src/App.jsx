@@ -9,6 +9,7 @@ function App() {
   const [lives, setLives] = useState(3);
   const [level, setLevel] = useState(1);
   const [fuel, setFuel] = useState(100);
+  const [completedLevels, setCompletedLevels] = useState(new Set());
 
   const handleStartGame = () => {
     setGameState('playing');
@@ -18,8 +19,15 @@ function App() {
     setFuel(100);
   };
 
+  const handleStartLevel = (levelNum) => {
+    setGameState('playing');
+    setLevel(levelNum);
+    setFuel(100);
+  };
+
   const handleLevelComplete = (completedLevel) => {
     setScore(prev => prev + 100);
+    setCompletedLevels(prev => new Set([...prev, completedLevel]));
     setLevel(prev => prev + 1);
     setGameState('playing');
   };
@@ -32,6 +40,26 @@ function App() {
     setScore(newScore);
   };
 
+  const levelButtons = [];
+  for (let i = 1; i <= 6; i++) {
+    levelButtons.push(
+      <button
+        key={i}
+        onClick={() => handleStartLevel(i)}
+        style={{
+          padding: '8px 12px',
+          cursor: 'pointer',
+          backgroundColor: completedLevels.has(i) ? '#00ff00' : '#333',
+          color: '#fff',
+          border: '1px solid #555',
+          margin: '2px'
+        }}
+      >
+        Level {i}
+      </button>
+    );
+  }
+
   return (
     <div className="app" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', backgroundColor: '#000', color: '#fff' }}>
       {gameState === 'menu' && (
@@ -39,19 +67,27 @@ function App() {
       )}
       
       {gameState === 'playing' && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '20px' }}>
-          <HUD score={score} lives={lives} level={level} fuel={fuel} />
-          <GameCanvas 
-            width={800} 
-            height={600} 
-            onFuelChange={setFuel} 
-            onLevelComplete={handleLevelComplete}
-            onGameOver={handleGameOver}
-            onScoreChange={handleScoreChange}
-          />
-          <button onClick={() => setGameState('menu')} style={{ padding: '10px 20px', cursor: 'pointer' }}>
-            Back to Menu
-          </button>
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '20px', padding: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+            <HUD score={score} lives={lives} level={level} fuel={fuel} />
+            <GameCanvas 
+              width={800} 
+              height={600} 
+              onFuelChange={setFuel} 
+              onLevelComplete={handleLevelComplete}
+              onGameOver={handleGameOver}
+              onScoreChange={handleScoreChange}
+              level={level}
+            />
+            <button onClick={() => setGameState('menu')} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+              Back to Menu
+            </button>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '10px', backgroundColor: '#111', border: '1px solid #333' }}>
+            <h3 style={{ margin: '0 0 10px 0' }}>Select Level</h3>
+            {levelButtons}
+          </div>
         </div>
       )}
 

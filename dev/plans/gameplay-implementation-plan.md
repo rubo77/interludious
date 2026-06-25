@@ -91,10 +91,12 @@
    - Track current level (1-6)
    - Load next level on completion
    - Score tracking per level
-2. Implement win condition
+2. Implement win condition with pod docking
    - Deliver pod to restart point (*)
-   - Wait for pod to stabilize
-   - Advance to next level
+   - Pod must dock (stop and attach to restart point)
+   - Screen scrolls up when pod docks
+   - Pod flies up into the sky on level complete
+   - Advance to next level after animation
 3. Implement lose condition
    - Ship hits bunker bullet
    - Ship hits dangerous object
@@ -113,12 +115,16 @@
    - Ship can be hit by bullets
 7. Integrate all systems in GameCanvas
 8. Add game state management (menu, playing, level complete, game over)
-9. Write integration tests for complete gameplay
-10. Commit: Complete gameplay with level progression
+9. Add level selection buttons on right side
+   - Direct level start buttons
+   - Display level numbers
+   - Show completion status
+10. Write integration tests for complete gameplay
+11. Commit: Complete gameplay with level progression and pod docking animation
 
 **Files to modify**:
-- `src/ui/GameCanvas.jsx` - Integrate all game systems
-- `src/ui/App.jsx` - Add game state management
+- `src/ui/GameCanvas.jsx` - Integrate all game systems, add pod docking animation
+- `src/ui/App.jsx` - Add game state management, add level selection buttons
 - `src/game/game-state.js` - Add level progression logic
 - `tests/integration/gameplay-integration.test.js` - Integration tests
 

@@ -5,7 +5,7 @@ import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
 
-export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange }) {
+export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange, level: levelProp }) {
   const canvasRef = useRef(null);
   const [ship] = useState(() => new Ship(width / 2, height / 2));
   const [keys, setKeys] = useState({});
@@ -17,8 +17,9 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
   const [restartPosition, setRestartPosition] = useState(null);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
-  const [currentLevel, setCurrentLevel] = useState(1);
-  const [gameState, setGameState] = useState('playing'); // playing, levelcomplete, gameover
+  const [currentLevel, setCurrentLevel] = useState(levelProp || 1);
+  const [gameState, setGameState] = useState('playing'); // playing, levelcomplete, gameover, docking
+  const [dockingAnimation, setDockingAnimation] = useState(null); // { progress: 0-1, phase: 'docking' | 'flying' }
   const levelLoader = useRef(new LevelLoader());
   const tileRenderer = useRef(new TileRenderer());
   const collision = useRef(new CollisionDetection(tileRenderer.current));
@@ -54,7 +55,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
 
       // Load the level
       try {
-        const levelContent = await levelLoader.current.loadLevel('level1');
+        const levelContent = await levelLoader.current.loadLevel(`level${currentLevel}`);
         const lines = levelContent.split('\n');
 
         // Parse metadata: width, height, height of start, empty space, bedrock
@@ -108,7 +109,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     };
 
     loadAssets();
-  }, []);
+  }, [currentLevel]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -165,14 +166,48 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         pod.update(1);
 
         // Win condition: pod delivered to restart point
-        if (restartPosition) {
+        if (restartPosition && gameState === 'playing') {
           const distanceToRestart = Math.sqrt(
             (pod.x - restartPosition.x) ** 2 + (pod.y - restartPosition.y) ** 2
           );
           if (distanceToRestart < 20 && !pod.towed) {
-            // Level complete
-            setGameState('levelcomplete');
-            if (onLevelComplete) onLevelComplete(currentLevel);
+            // Start docking animation
+            setGameState('docking');
+            setDockingAnimation({ progress: 0, phase: 'docking' });
+          }
+        }
+
+        // Handle docking animation
+        if (gameState === 'docking' && dockingAnimation) {
+          const { progress, phase } = dockingAnimation;
+          const newProgress = progress + 0.01;
+
+          if (phase === 'docking') {
+            // Phase 1: Pod snaps to restart point
+            pod.setPosition(restartPosition.x, restartPosition.y);
+            pod.setVelocity(0, 0);
+            if (newProgress >= 0.3) {
+              setDockingAnimation({ progress: 0.3, phase: 'flying' });
+            } else {
+              setDockingAnimation({ progress: newProgress, phase: 'docking' });
+            }
+          } else if (phase === 'flying') {
+            // Phase 2: Pod and ship fly up into the sky, camera scrolls up
+            const flySpeed = 2;
+            pod.y -= flySpeed;
+            ship.y -= flySpeed;
+            
+            // Scroll camera up
+            setCamera(prev => ({ ...prev, y: prev.y - flySpeed }));
+            
+            if (newProgress >= 1.0) {
+              // Animation complete, level finished
+              setGameState('levelcomplete');
+              setDockingAnimation(null);
+              if (onLevelComplete) onLevelComplete(currentLevel);
+            } else {
+              setDockingAnimation({ progress: newProgress, phase: 'flying' });
+            }
           }
         }
       }
@@ -337,7 +372,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera, pod, restartPosition, gameState, score, lives, currentLevel, onLevelComplete, onGameOver, onScoreChange]);
+  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera, pod, restartPosition, gameState, dockingAnimation, score, lives, currentLevel, onLevelComplete, onGameOver, onScoreChange]);
 
   return (
     <canvas
