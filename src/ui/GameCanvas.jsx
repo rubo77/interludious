@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Ship } from '../game/ship.js';
+import { Pod } from '../game/pod.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
@@ -11,6 +12,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [tilesetLoaded, setTilesetLoaded] = useState(false);
+  const [pod, setPod] = useState(null);
+  const [podPosition, setPodPosition] = useState(null);
   const levelLoader = useRef(new LevelLoader());
   const tileRenderer = useRef(new TileRenderer());
   const collision = useRef(new CollisionDetection(tileRenderer.current));
@@ -65,8 +68,26 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
         // Pad each row to full level width so tiles align
         layout = layout.map(row => row.padEnd(lenx, ' '));
 
+        // Find pod position (character 'm')
+        let podPos = null;
+        const scaledSize = 16; // TileRenderer scale
+        for (let y = 0; y < layout.length; y++) {
+          for (let x = 0; x < layout[y].length; x++) {
+            if (layout[y][x] === 'm') {
+              podPos = { x: x * scaledSize + scaledSize / 2, y: y * scaledSize + scaledSize / 2 };
+              break;
+            }
+          }
+          if (podPos) break;
+        }
+
         console.log('[LEVEL] Loaded level1:', layout.length, 'rows x', lenx, 'cols');
+        console.log('[POD] Position:', podPos);
         setLevel({ layout, width: lenx, height: layout.length });
+        setPodPosition(podPos);
+        if (podPos) {
+          setPod(new Pod(podPos.x, podPos.y));
+        }
       } catch (error) {
         console.error('[LEVEL] Failed to load:', error);
       }
@@ -98,6 +119,9 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
         ship.setThrust(false);
       }
 
+      // Tractor beam (Space key)
+      const tractorBeamActive = keys[' '] || keys['Space'];
+
       // Update ship
       ship.update(1);
 
@@ -107,6 +131,24 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
         if (collisionResult.collided) {
           collision.current.resolveCollision(ship, collisionResult);
         }
+      }
+
+      // Update pod
+      if (pod) {
+        if (tractorBeamActive) {
+          // Check if close enough to tow
+          const distance = Math.sqrt((ship.x - pod.x) ** 2 + (ship.y - pod.y) ** 2);
+          if (distance < 50) {
+            pod.setTowing(true);
+            const towPos = pod.getTowPosition(ship, ship.angle);
+            pod.moveToTowPosition(towPos.x, towPos.y, 0.15);
+          } else {
+            pod.setTowing(false);
+          }
+        } else {
+          pod.setTowing(false);
+        }
+        pod.update(1);
       }
 
       // Update camera to follow ship
@@ -167,6 +209,48 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
 
       ctx.restore();
 
+      // Draw pod with camera offset
+      if (pod) {
+        ctx.save();
+        ctx.translate(pod.x - camera.x, pod.y - camera.y);
+        
+        // Pod body (green circle)
+        ctx.fillStyle = '#00ff00';
+        ctx.beginPath();
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Pod outline
+        ctx.strokeStyle = '#00aa00';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.restore();
+
+        // Draw tractor beam when active and close
+        if (tractorBeamActive) {
+          const distance = Math.sqrt((ship.x - pod.x) ** 2 + (ship.y - pod.y) ** 2);
+          if (distance < 50) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(ship.x - camera.x, ship.y - camera.y);
+            ctx.lineTo(pod.x - camera.x, pod.y - camera.y);
+            ctx.stroke();
+            
+            // Glowing effect
+            ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(ship.x - camera.x, ship.y - camera.y);
+            ctx.lineTo(pod.x - camera.x, pod.y - camera.y);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
+
       // Boundary collision (wrap around)
       if (ship.x < 0) ship.x = width;
       if (ship.x > width) ship.x = 0;
@@ -181,7 +265,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera]);
+  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera, pod]);
 
   return (
     <canvas

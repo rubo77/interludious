@@ -1,42 +1,50 @@
-// Pod pickup and towing physics
-import { Pod } from './game-objects.js';
-
-export function createPod(x, y) {
-  return new Pod(x, y);
-}
-
-export function checkPodPickup(ship, pod) {
-  if (!pod.active) return false;
-  
-  const distance = Math.sqrt(
-    (ship.x - pod.x) ** 2 + (ship.y - pod.y) ** 2
-  );
-  
-  if (distance < 15) {
-    pod.towed = true;
-    return true;
+// Pod - The fuel canister that the ship must tow to the restart point
+export class Pod {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.vx = 0;
+    this.vy = 0;
+    this.towed = false;
+    this.towingDistance = 30;
   }
-  
-  return false;
-}
 
-export function updatePodTowing(ship, pod) {
-  if (!pod.towed || !pod.active) return;
-  
-  // Pod follows ship with spring-like physics
-  const dx = ship.x - pod.x;
-  const dy = ship.y - pod.y;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  
-  const targetDistance = 20;
-  const springStrength = 0.1;
-  
-  if (distance > targetDistance) {
-    pod.x += dx * springStrength;
-    pod.y += dy * springStrength;
+  update(dt, gravity = 0.05) {
+    if (!this.towed) {
+      this.vy += gravity;
+    }
+
+    this.vx *= 0.99;
+    this.vy *= 0.99;
+
+    this.x += this.vx;
+    this.y += this.vy;
   }
-}
 
-export function releasePod(pod) {
-  pod.towed = false;
+  setPosition(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  setTowing(towing) {
+    this.towed = towing;
+    if (!towing) {
+      this.vx = 0;
+      this.vy = 0;
+    }
+  }
+
+  getTowPosition(ship, angle) {
+    const distance = this.towingDistance;
+    const behindX = ship.x - Math.sin(angle) * distance;
+    const behindY = ship.y + Math.cos(angle) * distance;
+    return { x: behindX, y: behindY };
+  }
+
+  moveToTowPosition(targetX, targetY, strength = 0.1) {
+    const dx = targetX - this.x;
+    const dy = targetY - this.y;
+    this.vx += dx * strength;
+    this.vy += dy * strength;
+  }
 }
