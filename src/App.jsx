@@ -27,7 +27,7 @@ function App() {
       {gameState === 'playing' && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '20px' }}>
           <HUD score={score} lives={lives} level={level} fuel={fuel} />
-          <GameCanvas width={800} height={600} />
+          <GameCanvas width={800} height={600} onFuelChange={setFuel} />
           <button onClick={() => setGameState('menu')} style={{ padding: '10px 20px', cursor: 'pointer' }}>
             Back to Menu
           </button>

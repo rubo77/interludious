@@ -1,7 +1,28 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { Ship } from '../game/ship.js';
 
-export default function GameCanvas({ width = 800, height = 600 }) {
+export default function GameCanvas({ width = 800, height = 600, onFuelChange }) {
   const canvasRef = useRef(null);
+  const [ship] = useState(() => new Ship(width / 2, height / 2));
+  const [keys, setKeys] = useState({});
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      setKeys(prev => ({ ...prev, [e.key]: true }));
+    };
+
+    const handleKeyUp = (e) => {
+      setKeys(prev => ({ ...prev, [e.key]: false }));
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -10,18 +31,77 @@ export default function GameCanvas({ width = 800, height = 600 }) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, width, height);
+    let animationId;
 
-    // Draw simple placeholder content
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '24px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Game Canvas', width / 2, height / 2);
-    ctx.font = '16px Arial';
-    ctx.fillText('Game rendering will be implemented here', width / 2, height / 2 + 30);
-  }, [width, height]);
+    const render = () => {
+      // Handle input
+      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+        ship.rotateLeft();
+      }
+      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+        ship.rotateRight();
+      }
+      if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+        ship.setThrust(true);
+      } else {
+        ship.setThrust(false);
+      }
+
+      // Update ship
+      ship.update(1);
+
+      // Report fuel to parent
+      if (onFuelChange) {
+        onFuelChange(ship.fuel);
+      }
+
+      // Clear canvas
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw ship
+      ctx.save();
+      ctx.translate(ship.x, ship.y);
+      ctx.rotate(ship.angle);
+
+      // Ship body
+      ctx.fillStyle = '#00ff00';
+      ctx.beginPath();
+      ctx.moveTo(0, -15);
+      ctx.lineTo(10, 10);
+      ctx.lineTo(0, 5);
+      ctx.lineTo(-10, 10);
+      ctx.closePath();
+      ctx.fill();
+
+      // Thrust flame
+      if (ship.thrust > 0) {
+        ctx.fillStyle = '#ff6600';
+        ctx.beginPath();
+        ctx.moveTo(-5, 10);
+        ctx.lineTo(0, 20 + Math.random() * 10);
+        ctx.lineTo(5, 10);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      // Boundary collision (wrap around)
+      if (ship.x < 0) ship.x = width;
+      if (ship.x > width) ship.x = 0;
+      if (ship.y < 0) ship.y = height;
+      if (ship.y > height) ship.y = 0;
+
+      animationId = requestAnimationFrame(render);
+    };
+
+    animationId = requestAnimationFrame(render);
+
+    return () => {
+      cancelAnimationFrame(animationId);
+    };
+  }, [ship, keys, width, height, onFuelChange]);
 
   return (
     <canvas
@@ -29,6 +109,7 @@ export default function GameCanvas({ width = 800, height = 600 }) {
       width={width}
       height={height}
       style={{ border: '2px solid #333', backgroundColor: '#000' }}
+      tabIndex={0}
     />
   );
 }
