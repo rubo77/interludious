@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Ship } from '../game/ship.js';
 import { Pod } from '../game/pod.js';
+import { Bunker } from '../game/bunker.js';
+import { Bullet } from '../game/bullet.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
@@ -15,6 +17,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
   const [pod, setPod] = useState(null);
   const [podPosition, setPodPosition] = useState(null);
   const [restartPosition, setRestartPosition] = useState(null);
+  const [bunkers, setBunkers] = useState([]);
+  const [bullets, setBullets] = useState([]);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [currentLevel, setCurrentLevel] = useState(levelProp || 1);
@@ -77,6 +81,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         // Find pod position (character 'm') and restart point (character '*')
         let podPos = null;
         let restartPos = null;
+        const bunkerPositions = [];
         const scaledSize = 16; // TileRenderer scale
         for (let y = 0; y < layout.length; y++) {
           for (let x = 0; x < layout[y].length; x++) {
@@ -86,6 +91,13 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
             if (layout[y][x] === '*' && !restartPos) {
               restartPos = { x: x * scaledSize + scaledSize / 2, y: y * scaledSize + scaledSize / 2 };
             }
+            if (['P', 'U', '[', '\\'].includes(layout[y][x])) {
+              bunkerPositions.push({ 
+                x: x * scaledSize + scaledSize / 2, 
+                y: y * scaledSize + scaledSize / 2, 
+                type: layout[y][x] 
+              });
+            }
           }
           if (podPos && restartPos) break;
         }
@@ -93,6 +105,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         console.log('[LEVEL] Loaded level1:', layout.length, 'rows x', lenx, 'cols');
         console.log('[POD] Position:', podPos);
         console.log('[RESTART] Position:', restartPos);
+        console.log('[BUNKERS] Count:', bunkerPositions.length);
         setLevel({ layout, width: lenx, height: layout.length });
         setPodPosition(podPos);
         setRestartPosition(restartPos);
@@ -103,6 +116,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
           ship.setPosition(restartPos.x, restartPos.y);
           ship.setVelocity(0, 0);
         }
+        setBunkers(bunkerPositions.map(bp => new Bunker(bp.x, bp.y, bp.type)));
       } catch (error) {
         console.error('[LEVEL] Failed to load:', error);
       }
@@ -221,6 +235,57 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         }
       }
 
+      // Update bunkers and spawn bullets
+      if (gameState === 'playing') {
+        const newBullets = [...bullets];
+        bunkers.forEach(bunker => {
+          const shot = bunker.update(deltaTime, ship.x, ship.y);
+          if (shot) {
+            newBullets.push(new Bullet(bunker.x, bunker.y, shot.angle, shot.speed));
+          }
+        });
+        setBullets(newBullets);
+      }
+
+      // Update bullets and check collision with ship
+      setBullets(prev => {
+        const activeBullets = prev.filter(bullet => {
+          if (!bullet.active) return false;
+          bullet.update(deltaTime);
+          
+          // Check collision with ship
+          const dx = bullet.x - ship.x;
+          const dy = bullet.y - ship.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < 15) {
+            // Ship hit by bullet
+            setLives(prevLives => {
+              const newLives = prevLives - 1;
+              if (newLives <= 0) {
+                setGameState('gameover');
+                if (onGameOver) onGameOver(score);
+              } else {
+                // Respawn at restart point
+                if (restartPosition) {
+                  ship.setPosition(restartPosition.x, restartPosition.y);
+                  ship.setVelocity(0, 0);
+                  ship.fuel = 100;
+                }
+                if (pod && podPosition) {
+                  pod.setPosition(podPosition.x, podPosition.y);
+                  pod.setVelocity(0, 0);
+                }
+              }
+              return newLives;
+            });
+            return false;
+          }
+          
+          return true;
+        });
+        return activeBullets;
+      });
+
       // Lose condition: fuel empty
       if (ship.fuel <= 0) {
         setLives(prev => {
@@ -330,6 +395,49 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
 
       ctx.restore();
 
+      // Draw bunkers with camera offset
+      bunkers.forEach(bunker => {
+        ctx.save();
+        ctx.translate(bunker.x - camera.x, bunker.y - camera.y);
+        
+        // Bunker body (red rectangle)
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(-10, -10, 20, 20);
+        
+        // Bunker outline
+        ctx.strokeStyle = '#aa0000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-10, -10, 20, 20);
+        
+        // Bunker turret
+        ctx.fillStyle = '#cc0000';
+        ctx.beginPath();
+        ctx.arc(0, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+      });
+
+      // Draw bullets with camera offset
+      bullets.forEach(bullet => {
+        ctx.save();
+        ctx.translate(bullet.x - camera.x, bullet.y - camera.y);
+        
+        // Bullet (yellow circle)
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(0, 0, bullet.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Bullet glow
+        ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+        ctx.beginPath();
+        ctx.arc(0, 0, bullet.radius * 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+      });
+
       // Draw pod with camera offset
       if (pod) {
         ctx.save();
@@ -386,7 +494,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera, pod, restartPosition, gameState, dockingAnimation, score, lives, currentLevel, onLevelComplete, onGameOver, onScoreChange]);
+  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera, pod, restartPosition, gameState, dockingAnimation, score, lives, currentLevel, onLevelComplete, onGameOver, onScoreChange, bunkers, bullets]);
 
   return (
     <canvas
