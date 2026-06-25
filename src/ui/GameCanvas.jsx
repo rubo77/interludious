@@ -1,10 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Ship } from '../game/ship.js';
+import { LevelRenderer } from '../game/level-renderer.js';
+import { LevelLoader } from '../levels/level-loader.js';
 
 export default function GameCanvas({ width = 800, height = 600, onFuelChange }) {
   const canvasRef = useRef(null);
   const [ship] = useState(() => new Ship(width / 2, height / 2));
   const [keys, setKeys] = useState({});
+  const [level, setLevel] = useState(null);
+  const levelLoader = useRef(new LevelLoader());
+  const levelRenderer = useRef(new LevelRenderer());
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -22,6 +27,41 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
+  }, []);
+
+  useEffect(() => {
+    const loadLevel = async () => {
+      try {
+        const levelContent = await levelLoader.current.loadLevel('level1');
+        const lines = levelContent.split('\n');
+        const layout = lines.filter(line => line.trim() && !line.trim().startsWith('#'));
+        setLevel({ layout, width: layout[0]?.length || 0, height: layout.length || 0 });
+      } catch (error) {
+        console.error('Failed to load level:', error);
+        // Create simple test level
+        const layout = [
+          '####################',
+          '#                  #',
+          '#                  #',
+          '#                  #',
+          '#  *               #',
+          '#                  #',
+          '#                  #',
+          '#                  #',
+          '#                  #',
+          '#                  #',
+          '#                  #',
+          '#                  #',
+          '#                  #',
+          '#                  #',
+          '#                  #',
+          '####################'
+        ];
+        setLevel({ layout, width: layout[0].length, height: layout.length });
+      }
+    };
+
+    loadLevel();
   }, []);
 
   useEffect(() => {
@@ -58,6 +98,11 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
       // Clear canvas
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, width, height);
+
+      // Draw level
+      if (level) {
+        levelRenderer.current.render(ctx, level);
+      }
 
       // Draw ship
       ctx.save();
@@ -101,7 +146,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [ship, keys, width, height, onFuelChange]);
+  }, [ship, keys, width, height, onFuelChange, level]);
 
   return (
     <canvas
