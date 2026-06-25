@@ -70,4 +70,12 @@ export class CapacitorManager {
     }
     return null;
   }
+
+  async Haptics() {
+    const Haptics = await this.loadPlugin('haptics');
+    if (Haptics) {
+      return Haptics;
+    }
+    return null;
+  }
 }
