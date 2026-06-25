@@ -1,12 +1,40 @@
-import React from 'react'
+import React, { useState } from 'react';
+import Menu from './ui/Menu';
+import HUD from './ui/HUD';
+import GameCanvas from './ui/GameCanvas';
 
 function App() {
+  const [gameState, setGameState] = useState('menu'); // menu, playing, paused, gameover, levelcomplete
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [level, setLevel] = useState(1);
+  const [fuel, setFuel] = useState(100);
+
+  const handleStartGame = () => {
+    setGameState('playing');
+    setScore(0);
+    setLives(3);
+    setLevel(1);
+    setFuel(100);
+  };
+
   return (
-    <div className="app">
-      <h1>Thrust Web</h1>
-      <p>Phase 1: Setting up project...</p>
+    <div className="app" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', backgroundColor: '#000', color: '#fff' }}>
+      {gameState === 'menu' && (
+        <Menu onStart={handleStartGame} />
+      )}
+      
+      {gameState === 'playing' && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '20px' }}>
+          <HUD score={score} lives={lives} level={level} fuel={fuel} />
+          <GameCanvas width={800} height={600} />
+          <button onClick={() => setGameState('menu')} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+            Back to Menu
+          </button>
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
