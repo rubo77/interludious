@@ -4,7 +4,7 @@ import HUD from './ui/HUD';
 import GameCanvas from './ui/GameCanvas';
 
 function App() {
-  const [gameState, setGameState] = useState('menu'); // menu, playing, paused, gameover, levelcomplete
+  const [gameState, setGameState] = useState('playing'); // Start directly in playing mode
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [level, setLevel] = useState(1);

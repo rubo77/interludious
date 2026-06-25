@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Ship } from '../game/ship.js';
-import { LevelRenderer } from '../game/level-renderer.js';
+import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
+import { CollisionDetection } from '../physics/collision.js';
 
 export default function GameCanvas({ width = 800, height = 600, onFuelChange }) {
   const canvasRef = useRef(null);
@@ -9,8 +10,10 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
   const [keys, setKeys] = useState({});
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
+  const [tilesetLoaded, setTilesetLoaded] = useState(false);
   const levelLoader = useRef(new LevelLoader());
-  const levelRenderer = useRef(new LevelRenderer());
+  const tileRenderer = useRef(new TileRenderer());
+  const collision = useRef(new CollisionDetection(tileRenderer.current));
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -31,46 +34,45 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
   }, []);
 
   useEffect(() => {
-    const loadLevel = async () => {
+    const loadAssets = async () => {
+      // Load the original tileset
+      try {
+        await tileRenderer.current.load();
+        setTilesetLoaded(true);
+        console.log('[TILESET] Loaded successfully');
+      } catch (error) {
+        console.error('[TILESET] Failed to load:', error);
+      }
+
+      // Load the level
       try {
         const levelContent = await levelLoader.current.loadLevel('level1');
         const lines = levelContent.split('\n');
-        // Filter out empty lines and comments, but keep the ASCII layout
-        // The layout starts after the metadata (first ~10 lines)
-        const layout = lines.filter(line => {
-          const trimmed = line.trim();
-          return trimmed.length > 0 && 
-                 !trimmed.startsWith(';') && 
-                 !trimmed.match(/^\d+\s*;/); // Skip metadata lines like "82 ; width"
-        });
-        
-        setLevel({ layout, width: layout[0]?.length || 0, height: layout.length || 0 });
+
+        // Parse metadata: width, height, height of start, empty space, bedrock
+        const lenx = parseInt(lines[0], 10);
+        const sx = parseInt(lines[2], 10); // height of start (stars)
+        const sy = parseInt(lines[3], 10); // height of empty space
+
+        // Layout starts after 10 metadata lines
+        // Keep ALL layout lines including space-only lines (they are sky)
+        // Remove only the final trailing empty line
+        let layout = lines.slice(10);
+        while (layout.length > 0 && layout[layout.length - 1].length === 0) {
+          layout.pop();
+        }
+
+        // Pad each row to full level width so tiles align
+        layout = layout.map(row => row.padEnd(lenx, ' '));
+
+        console.log('[LEVEL] Loaded level1:', layout.length, 'rows x', lenx, 'cols');
+        setLevel({ layout, width: lenx, height: layout.length });
       } catch (error) {
-        console.error('Failed to load level:', error);
-        // Create simple test level with platforms
-        const layout = [
-          '####################',
-          '#                  #',
-          '#                  #',
-          '#                  #',
-          '#  *               #',
-          '#                  #',
-          '#                  #',
-          '#                  #',
-          '#                  #',
-          '#pppppppppppppppppp#',
-          '#                  #',
-          '#                  #',
-          '#                  #',
-          '#                  #',
-          '#                  #',
-          '####################'
-        ];
-        setLevel({ layout, width: layout[0].length, height: layout.length });
+        console.error('[LEVEL] Failed to load:', error);
       }
     };
 
-    loadLevel();
+    loadAssets();
   }, []);
 
   useEffect(() => {
@@ -99,18 +101,27 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
       // Update ship
       ship.update(1);
 
+      // Check collision with level
+      if (level && tilesetLoaded) {
+        const collisionResult = collision.current.checkShipCollision(ship, level);
+        if (collisionResult.collided) {
+          collision.current.resolveCollision(ship, collisionResult);
+        }
+      }
+
       // Update camera to follow ship
       if (level) {
-        const levelWidth = level.width * levelRenderer.current.tileSize;
-        const levelHeight = level.height * levelRenderer.current.tileSize;
-        
+        const scaledSize = tileRenderer.current.getScaledTileSize();
+        const levelWidth = level.width * scaledSize;
+        const levelHeight = level.height * scaledSize;
+
         // Center camera on ship, clamping to level bounds
         const targetX = ship.x - width / 2;
         const targetY = ship.y - height / 2;
-        
+
         setCamera({
-          x: Math.max(0, Math.min(targetX, levelWidth - width)),
-          y: Math.max(0, Math.min(targetY, levelHeight - height))
+          x: Math.max(0, Math.min(targetX, Math.max(0, levelWidth - width))),
+          y: Math.max(0, Math.min(targetY, Math.max(0, levelHeight - height)))
         });
       }
 
@@ -124,11 +135,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
       ctx.fillRect(0, 0, width, height);
 
       // Draw level with camera offset
-      if (level) {
-        ctx.save();
-        ctx.translate(-camera.x, -camera.y);
-        levelRenderer.current.render(ctx, level);
-        ctx.restore();
+      if (level && tilesetLoaded) {
+        tileRenderer.current.render(ctx, level, -camera.x, -camera.y);
       }
 
       // Draw ship with camera offset
@@ -173,7 +181,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange }) 
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [ship, keys, width, height, onFuelChange, level]);
+  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera]);
 
   return (
     <canvas

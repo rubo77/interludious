@@ -36,8 +36,10 @@ export class LevelRenderer {
         ctx.fillStyle = '#ffff00';
         ctx.fillRect(x, y, this.tileSize, this.tileSize);
         ctx.fillStyle = '#000000';
-        ctx.font = '6px Arial';
-        ctx.fillText('R', x + 1, y + 6);
+        ctx.font = `${this.tileSize - 2}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('R', x + this.tileSize / 2, y + this.tileSize / 2);
         break;
 
       case '`': // Fuel
@@ -83,17 +85,71 @@ export class LevelRenderer {
         ctx.fillRect(x, y + this.tileSize - 6, this.tileSize, 6);
         break;
 
+      // Buttons (L, N) - different colors for different button types
+      case 'L': // Button type 1
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(x, y, this.tileSize, this.tileSize);
+        break;
+
+      case 'N': // Button type 2
+        ctx.fillStyle = '#00aa00';
+        ctx.fillRect(x, y, this.tileSize, this.tileSize);
+        break;
+
+      // Sliders (@-K) - different colors for different slider types
+      case '@':
+      case 'A':
+      case 'B':
+      case 'C':
+      case 'D':
+      case 'E':
+      case 'F':
+      case 'G':
+      case 'H':
+      case 'I':
+      case 'J':
+      case 'K':
+        ctx.fillStyle = '#0000ff';
+        ctx.fillRect(x, y, this.tileSize, this.tileSize);
+        break;
+
+      // Bunkers (P, U, [, \) - different colors for different bunker types
+      case 'P':
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(x, y, this.tileSize, this.tileSize);
+        break;
+
+      case 'U':
+        ctx.fillStyle = '#ff6666';
+        ctx.fillRect(x, y, this.tileSize, this.tileSize);
+        break;
+
+      case '[':
+        ctx.fillStyle = '#ff9999';
+        ctx.fillRect(x, y, this.tileSize, this.tileSize);
+        break;
+
+      case '\\':
+        ctx.fillStyle = '#ffcccc';
+        ctx.fillRect(x, y, this.tileSize, this.tileSize);
+        break;
+
+      // Letters for other objects - render as placeholders with different colors
       default:
-        // Sliders (@-K), Buttons (L,N), Bunkers (P,U,[,\) - render as placeholders
-        if (this.isBunker(tile)) {
-          ctx.fillStyle = '#ff0000';
+        if (tile.match(/[a-z]/i)) {
+          // Letters - render as colored rectangles for now
+          const hue = (tile.charCodeAt(0) % 26) * 14;
+          ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
           ctx.fillRect(x, y, this.tileSize, this.tileSize);
-        } else if (this.isButton(tile)) {
-          ctx.fillStyle = '#00ff00';
+        } else if (tile.match(/[0-9]/)) {
+          // Numbers - render as yellow
+          ctx.fillStyle = '#ffff00';
           ctx.fillRect(x, y, this.tileSize, this.tileSize);
-        } else if (this.isSlider(tile)) {
-          ctx.fillStyle = '#0000ff';
-          ctx.fillRect(x, y, this.tileSize, this.tileSize);
+          ctx.fillStyle = '#000000';
+          ctx.font = `${this.tileSize - 2}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(tile, x + this.tileSize / 2, y + this.tileSize / 2);
         }
         break;
     }

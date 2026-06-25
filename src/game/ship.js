@@ -11,7 +11,7 @@ export class Ship {
     this.fuel = 100;
   }
 
-  update(dt, gravity = 0.1) {
+  update(dt, gravity = 0.05) {
     // Apply gravity
     this.vy += gravity;
 
