@@ -511,7 +511,9 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         
         if (ship.y < skyThreshold) {
           // Check if pod is close to ship (within towing distance)
-          const podClose = pod && Math.sqrt((ship.x - pod.x) ** 2 + (ship.y - pod.y) ** 2) < 50;
+          const podDistance = pod ? Math.sqrt((ship.x - pod.x) ** 2 + (ship.y - pod.y) ** 2) : Infinity;
+          const podClose = pod && (pod.towed || podDistance < 80);
+          console.log('[SKY] Reached sky threshold', { shipY: ship.y, skyThreshold, podDistance, podTowed: pod?.towed, podClose });
           if (podClose) {
             // Flying into sky with pod = level complete
             setGameState('levelcomplete');
