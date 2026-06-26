@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Menu from './ui/Menu';
 import HUD from './ui/HUD';
 import GameCanvas from './ui/GameCanvas';
@@ -39,6 +39,24 @@ function App() {
   const handleScoreChange = (newScore) => {
     setScore(newScore);
   };
+
+  // Keyboard shortcuts for game over screen
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (gameState === 'gameover') {
+        if (e.key === ' ' || e.key === 'Space') {
+          e.preventDefault();
+          handleStartGame();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          setGameState('menu');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState]);
 
   const levelButtons = [];
   for (let i = 1; i <= 6; i++) {
