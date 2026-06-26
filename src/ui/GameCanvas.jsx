@@ -799,9 +799,24 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       // Render particles
       particleSystem.current.render(ctx, camera.x, camera.y);
 
-      // Boundary collision (wrap around X axis only)
-      if (ship.x < 0) ship.x = width;
-      if (ship.x > width) ship.x = 0;
+      // X-axis wrapping based on level width, not canvas width
+      // Only wrap if the ship is not colliding with walls at the boundary
+      if (level && tilesetLoaded) {
+        const levelWidth = level.width * 16; // scaled tile size
+        if (ship.x < 0) {
+          // Check if there's a wall at the right boundary before wrapping
+          const tileAtRight = tileRenderer.current.getTileAt(level, levelWidth - 1, Math.floor(ship.y / 16));
+          if (!tileAtRight || [' ', '.'].includes(tileAtRight)) {
+            ship.x = levelWidth;
+          }
+        } else if (ship.x > levelWidth) {
+          // Check if there's a wall at the left boundary before wrapping
+          const tileAtLeft = tileRenderer.current.getTileAt(level, 0, Math.floor(ship.y / 16));
+          if (!tileAtLeft || [' ', '.'].includes(tileAtLeft)) {
+            ship.x = 0;
+          }
+        }
+      }
 
       animationId = requestAnimationFrame(render);
     };
