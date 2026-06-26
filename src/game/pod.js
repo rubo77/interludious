@@ -6,19 +6,22 @@ export class Pod {
     this.vx = 0;
     this.vy = 0;
     this.towed = false;
+    this.active = true;
     this.towingDistance = 30;
   }
 
   update(dt, gravity = 0.05) {
+    if (!this.active) return;
+    
     if (!this.towed) {
-      this.vy += gravity;
+      this.vy += gravity * dt;
     }
 
-    this.vx *= 0.99;
-    this.vy *= 0.99;
+    this.vx *= Math.pow(0.99, dt);
+    this.vy *= Math.pow(0.99, dt);
 
-    this.x += this.vx;
-    this.y += this.vy;
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
   }
 
   setPosition(x, y) {
@@ -44,7 +47,7 @@ export class Pod {
   moveToTowPosition(targetX, targetY, strength = 0.1) {
     const dx = targetX - this.x;
     const dy = targetY - this.y;
-    this.vx += dx * strength;
-    this.vy += dy * strength;
+    this.x += dx * strength;
+    this.y += dy * strength;
   }
 }

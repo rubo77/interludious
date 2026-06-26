@@ -5,24 +5,24 @@ import Menu from '../../src/ui/Menu.jsx';
 describe('Menu Component', () => {
   it('should render title', () => {
     render(<Menu onStart={() => {}} />);
-    expect(screen.getByText('Interludious')).toBeInTheDocument();
+    expect(screen.getByText('INTERLUDIOUS')).toBeInTheDocument();
   });
 
   it('should render subtitle', () => {
     render(<Menu onStart={() => {}} />);
-    expect(screen.getByText('A modern take on the classic Thrust')).toBeInTheDocument();
+    expect(screen.getByText('A MODERN TAKE ON THE CLASSIC THRUST')).toBeInTheDocument();
   });
 
   it('should render start button', () => {
     render(<Menu onStart={() => {}} />);
-    expect(screen.getByText('Start Game')).toBeInTheDocument();
+    expect(screen.getByText('START GAME')).toBeInTheDocument();
   });
 
   it('should call onStart when button clicked', () => {
     const onStart = vi.fn();
     render(<Menu onStart={onStart} />);
     
-    const button = screen.getByText('Start Game');
+    const button = screen.getByText('START GAME');
     button.click();
     
     expect(onStart).toHaveBeenCalledTimes(1);
