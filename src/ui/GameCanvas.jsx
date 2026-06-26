@@ -287,6 +287,30 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       // Tractor beam (Space key)
       const tractorBeamActive = keys[' '] || keys['Space'];
 
+      // Tractor beam raycast: beam shoots straight down until it hits the first obstacle.
+      // Disabled while the pod is being towed (docked).
+      const beamActive = tractorBeamActive && !(pod && pod.towed);
+      let beamEndY = ship.y;
+      if (beamActive && level && tilesetLoaded) {
+        const maxBeam = 240;
+        const step = 4;
+        beamEndY = ship.y + maxBeam;
+        for (let d = 10; d <= maxBeam; d += step) {
+          const checkY = ship.y + d;
+          const tile = tileRenderer.current.getTileAt(level, ship.x, checkY);
+          if (tile === '`') {
+            // Fuel depot inside the beam: recharge fuel gradually (like the original)
+            ship.fuel = Math.min(100, ship.fuel + 0.8 * deltaTime);
+            beamEndY = checkY;
+            break;
+          }
+          if (tileRenderer.current.isWall(tile)) {
+            beamEndY = checkY;
+            break;
+          }
+        }
+      }
+
       // Player shooting (X key)
       setPlayerBullets(prev => {
         const newBullets = [...prev];
@@ -767,33 +791,45 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
 
         ctx.restore();
 
-        // Draw tractor beam when Space is pressed (always visible downward beam)
-        if (tractorBeamActive) {
-          ctx.save();
-          // Main beam downward from ship (green)
-          ctx.strokeStyle = 'rgba(0, 255, 0, 0.6)';
-          ctx.lineWidth = 4;
-          ctx.beginPath();
-          ctx.moveTo(ship.x - camera.x, ship.y - camera.y);
-          ctx.lineTo(ship.x - camera.x, ship.y - camera.y + 100);
-          ctx.stroke();
-          
-          // Glowing effect (wider, more transparent)
-          ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
-          ctx.lineWidth = 8;
-          ctx.beginPath();
-          ctx.moveTo(ship.x - camera.x, ship.y - camera.y);
-          ctx.lineTo(ship.x - camera.x, ship.y - camera.y + 100);
-          ctx.stroke();
-
-          // If pod is close, draw additional connection to pod
+        // If pod is close (not yet docked), draw a subtle connection to the pod
+        if (beamActive) {
           const distance = Math.sqrt((ship.x - pod.x) ** 2 + (ship.y - pod.y) ** 2);
           if (distance < 50) {
-            ctx.strokeStyle = 'rgba(255, 255, 0, 0.7)';
-            ctx.lineWidth = 3;
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.35)';
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.moveTo(ship.x - camera.x, ship.y - camera.y);
             ctx.lineTo(pod.x - camera.x, pod.y - camera.y);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
+
+      // Draw fine iridescent tractor beam spiral (down to first obstacle only)
+      if (beamActive) {
+        const sx = ship.x - camera.x;
+        const sy = ship.y - camera.y;
+        const length = beamEndY - ship.y;
+        if (length > 0) {
+          const t = performance.now() / 300;
+          ctx.save();
+          ctx.lineWidth = 1.2;
+          // Two intertwined strands form a delicate helix/spiral
+          for (let strand = 0; strand < 2; strand++) {
+            ctx.beginPath();
+            for (let d = 0; d <= length; d += 3) {
+              const phase = d * 0.18 + t + strand * Math.PI;
+              const amp = 5 * (1 - (d / length) * 0.25); // gently tapering
+              const x = sx + Math.sin(phase) * amp;
+              const y = sy + d;
+              if (d === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            // Iridescent shifting hue, very low alpha so it is barely perceptible
+            const hue = (t * 50 + strand * 140) % 360;
+            ctx.strokeStyle = `hsla(${hue}, 95%, 72%, 0.22)`;
             ctx.stroke();
           }
           ctx.restore();
