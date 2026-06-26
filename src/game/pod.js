@@ -31,10 +31,7 @@ export class Pod {
 
   setTowing(towing) {
     this.towed = towing;
-    if (!towing) {
-      this.vx = 0;
-      this.vy = 0;
-    }
+    // Don't reset velocity when releasing - let gravity take over
   }
 
   getTowPosition(ship, angle) {
