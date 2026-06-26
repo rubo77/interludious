@@ -152,6 +152,18 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     loadAssets();
   }, [currentLevel]);
 
+  // Update currentLevel when levelProp changes
+  useEffect(() => {
+    if (levelProp !== undefined && levelProp !== currentLevel) {
+      setCurrentLevel(levelProp);
+      // Reset game state when level changes
+      setGameState('playing');
+      setDockingAnimation(null);
+      setScore(0);
+      setLives(3);
+    }
+  }, [levelProp, currentLevel]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;

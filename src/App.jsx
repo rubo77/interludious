@@ -113,6 +113,24 @@ function App() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
               {levelButtons}
             </div>
+            
+            <div style={{ marginTop: '20px' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontWeight: '600', fontSize: '14px', letterSpacing: '1px', color: '#888' }}>CONTROLS</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#aaa' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
+                  <span>↑ / W</span>
+                  <span>Thrust</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
+                  <span>← / A</span>
+                  <span>Rotate Left</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
+                  <span>→ / D</span>
+                  <span>Rotate Right</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
