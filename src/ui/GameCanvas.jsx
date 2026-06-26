@@ -36,6 +36,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
   const levelLoader = useRef(new LevelLoader());
   const tileRenderer = useRef(new TileRenderer());
   const collision = useRef(new CollisionDetection(tileRenderer.current));
+  const levelCompleteTriggered = useRef(false);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -150,6 +151,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         if (restartPos) {
           ship.setPosition(restartPos.x, restartPos.y);
           ship.setVelocity(0, 0);
+          // Reset level complete guard for the new level
+          levelCompleteTriggered.current = false;
           // Reset camera to center on ship spawn, clamped to level bounds
           const levelWidth = lenx * scaledSize;
           const levelHeight = layout.length * scaledSize;
@@ -519,10 +522,13 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
           const podDistance = pod ? Math.sqrt((ship.x - pod.x) ** 2 + (ship.y - pod.y) ** 2) : Infinity;
           const podClose = pod && (pod.towed || podDistance < 80);
           if (podClose) {
-            // Flying into sky with pod = level complete
-            setGameState('levelcomplete');
-            setDockingAnimation(null);
-            if (onLevelComplete) onLevelComplete(currentLevel);
+            // Flying into sky with pod = level complete (guard against multiple triggers)
+            if (!levelCompleteTriggered.current) {
+              levelCompleteTriggered.current = true;
+              setGameState('levelcomplete');
+              setDockingAnimation(null);
+              if (onLevelComplete) onLevelComplete(currentLevel);
+            }
           } else {
             // Flying into sky without pod = reset game
             setLives(prev => {
