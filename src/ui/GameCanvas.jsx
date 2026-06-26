@@ -187,7 +187,14 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     }
   }, [levelProp, currentLevel]);
 
-  useEffect(() => {
+  // Render logic is stored in a ref so the requestAnimationFrame loop can stay stable
+  // (a single loop for the whole component lifetime). Previously the loop lived inside an
+  // effect whose dependency array changed every frame, so it was torn down and recreated
+  // constantly and could spawn multiple concurrent loops -> progressive slowdown under load.
+  const lastTimeRef = useRef(performance.now());
+  const renderFnRef = useRef(() => {});
+
+  renderFnRef.current = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -197,9 +204,6 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     // Enable anti-aliasing and smooth rendering
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-
-    let animationId;
-    let lastTime = performance.now();
 
     // Destroy the ship: start ~1s explosion animation, then game over or respawn (DRY helper)
     const destroyShip = () => {
@@ -242,10 +246,11 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       });
     };
 
-    const render = () => {
-      const currentTime = performance.now();
-      const deltaTime = (currentTime - lastTime) / 16.67; // Normalize to 1.0 at 60fps
-      lastTime = currentTime;
+    const currentTime = performance.now();
+    let deltaTime = (currentTime - lastTimeRef.current) / 16.67; // Normalize to 1.0 at 60fps
+    // Cap delta to avoid a "spiral of death" if a single frame is very slow
+    if (deltaTime > 3) deltaTime = 3;
+    lastTimeRef.current = currentTime;
 
       // Death animation: explode for ~1s with debris, then game over or respawn
       const isDying = deathAnim.current.active;
@@ -863,15 +868,19 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         }
       }
 
-      animationId = requestAnimationFrame(render);
-    };
+  };
 
-    animationId = requestAnimationFrame(render);
-
-    return () => {
-      cancelAnimationFrame(animationId);
+  // Single stable RAF loop for the whole component lifetime.
+  // It always calls the latest render logic via renderFnRef, so the loop is never torn down/recreated.
+  useEffect(() => {
+    let animationId;
+    const loop = () => {
+      renderFnRef.current();
+      animationId = requestAnimationFrame(loop);
     };
-  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera, pod, restartPosition, gameState, dockingAnimation, score, lives, currentLevel, onLevelComplete, onGameOver, onScoreChange, bunkers, bullets, playerBullets, buttons, sliders, screenShake]);
+    animationId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animationId);
+  }, []);
 
   return (
     <canvas
