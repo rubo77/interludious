@@ -11,8 +11,8 @@ export class Ship {
     this.fuel = 100;
   }
 
-  update(dt, gravity = 0.05) {
-    // Apply gravity
+  update(dt, gravity = 0.055) {
+    // Apply gravity (10% stronger)
     this.vy += gravity * dt;
 
     // Apply thrust
@@ -36,12 +36,12 @@ export class Ship {
   }
 
   rotateLeft() {
-    this.angle -= 0.1;
+    this.angle -= 0.05;
     this.rotation = (this.angle * 180 / Math.PI) % 360;
   }
 
   rotateRight() {
-    this.angle += 0.1;
+    this.angle += 0.05;
     this.rotation = (this.angle * 180 / Math.PI) % 360;
   }
 
