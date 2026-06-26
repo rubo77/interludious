@@ -28,6 +28,9 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
   const [sliders, setSliders] = useState([]);
   const [score, setScore] = useState(0);
   const [screenShake, setScreenShake] = useState({ x: 0, y: 0, intensity: 0 });
+  const [podExploded, setPodExploded] = useState(false);
+  const [podExplosionTime, setPodExplosionTime] = useState(null);
+  const [podStartPosition, setPodStartPosition] = useState(null);
   const particleSystem = useRef(new ParticleSystem());
   const [lives, setLives] = useState(3);
   const [currentLevel, setCurrentLevel] = useState(levelProp || 1);
@@ -146,9 +149,14 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         console.log('[SLIDERS] Count:', sliderPositions.length);
         setLevel({ layout, width: lenx, height: layout.length });
         setPodPosition(podPos);
+        setPodStartPosition(podPos);
         setRestartPosition(restartPos);
         if (podPos) {
-          setPod(new Pod(podPos.x, podPos.y));
+          // Offset pod position slightly to avoid collision with holder
+          const podX = podPos.x;
+          const podY = podPos.y - 8;
+          setPod(new Pod(podX, podY));
+          setPodStartPosition({ x: podX, y: podY });
         }
         if (restartPos) {
           ship.setPosition(restartPos.x, restartPos.y);
@@ -341,6 +349,16 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         return newBullets;
       });
 
+      // Check if 0.5 seconds have passed after pod explosion, then destroy ship
+      if (podExploded && podExplosionTime) {
+        const timeSinceExplosion = performance.now() - podExplosionTime;
+        if (timeSinceExplosion >= 500 && !isDying) {
+          destroyShip();
+          setPodExploded(false);
+          setPodExplosionTime(null);
+        }
+      }
+
       // Skip all updates if frozen (game over state with frozen canvas)
       if (frozen) {
         // Still render the scene but don't update anything
@@ -373,6 +391,29 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         } else {
           pod.setTowing(false);
         }
+        
+        // Check if pod has moved from start position
+        const hasMoved = podStartPosition && 
+          (Math.abs(pod.x - podStartPosition.x) > 5 || Math.abs(pod.y - podStartPosition.y) > 5);
+        
+        // Disable gravity while pod is on start holder
+        if (!hasMoved) {
+          pod.vy = 0;
+          pod.vx = 0;
+        }
+        
+        // Check pod collision with walls/obstacles (only after moving)
+        if (!podExploded && gameState === 'playing' && hasMoved) {
+          const podCollision = collision.current.checkPodCollision(pod, level);
+          if (podCollision.collided) {
+            // Pod explodes first
+            setPodExploded(true);
+            setPodExplosionTime(performance.now());
+            particleSystem.current.spawnExplosion(pod.x, pod.y, 40, '#00ff00');
+            setPod(null); // Remove pod from game
+          }
+        }
+        
         pod.update(deltaTime);
 
         // Win condition: pod delivered to restart point

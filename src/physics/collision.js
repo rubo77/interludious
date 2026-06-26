@@ -75,4 +75,42 @@ export class CollisionDetection {
       y1 + h1 > y2
     );
   }
+
+  checkPodCollision(pod, level) {
+    if (!level || !level.layout) return { collided: false };
+
+    const podRadius = 8;
+    
+    // Check pod center
+    const centerTile = this.levelRenderer.getTileAt(level, pod.x, pod.y);
+    if (this.levelRenderer.isWall(centerTile)) {
+      return { collided: true, tile: centerTile, point: { x: pod.x, y: pod.y } };
+    }
+
+    // Check pod perimeter points
+    const podPoints = this.getPodPoints(pod, podRadius);
+    for (const point of podPoints) {
+      const tile = this.levelRenderer.getTileAt(level, point.x, point.y);
+      if (this.levelRenderer.isWall(tile)) {
+        return { collided: true, tile, point };
+      }
+    }
+
+    return { collided: false };
+  }
+
+  getPodPoints(pod, radius) {
+    const points = [];
+    const numPoints = 8;
+    
+    for (let i = 0; i < numPoints; i++) {
+      const angle = (i / numPoints) * Math.PI * 2;
+      points.push({
+        x: pod.x + Math.cos(angle) * radius,
+        y: pod.y + Math.sin(angle) * radius
+      });
+    }
+
+    return points;
+  }
 }
