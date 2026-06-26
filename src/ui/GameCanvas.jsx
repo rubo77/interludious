@@ -767,27 +767,36 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
 
         ctx.restore();
 
-        // Draw tractor beam when active and close
+        // Draw tractor beam when Space is pressed (always visible downward beam)
         if (tractorBeamActive) {
+          ctx.save();
+          // Main beam downward from ship (green)
+          ctx.strokeStyle = 'rgba(0, 255, 0, 0.6)';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(ship.x - camera.x, ship.y - camera.y);
+          ctx.lineTo(ship.x - camera.x, ship.y - camera.y + 100);
+          ctx.stroke();
+          
+          // Glowing effect (wider, more transparent)
+          ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
+          ctx.lineWidth = 8;
+          ctx.beginPath();
+          ctx.moveTo(ship.x - camera.x, ship.y - camera.y);
+          ctx.lineTo(ship.x - camera.x, ship.y - camera.y + 100);
+          ctx.stroke();
+
+          // If pod is close, draw additional connection to pod
           const distance = Math.sqrt((ship.x - pod.x) ** 2 + (ship.y - pod.y) ** 2);
           if (distance < 50) {
-            ctx.save();
-            ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.7)';
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(ship.x - camera.x, ship.y - camera.y);
             ctx.lineTo(pod.x - camera.x, pod.y - camera.y);
             ctx.stroke();
-            
-            // Glowing effect
-            ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
-            ctx.lineWidth = 6;
-            ctx.beginPath();
-            ctx.moveTo(ship.x - camera.x, ship.y - camera.y);
-            ctx.lineTo(pod.x - camera.x, pod.y - camera.y);
-            ctx.stroke();
-            ctx.restore();
           }
+          ctx.restore();
         }
       }
 
