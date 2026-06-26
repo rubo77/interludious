@@ -38,10 +38,18 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
   useEffect(() => {
     const handleKeyDown = (e) => {
       setKeys(prev => ({ ...prev, [e.key]: true }));
+      // Prevent space from scrolling the page
+      if (e.key === ' ' || e.key === 'Space') {
+        e.preventDefault();
+      }
     };
 
     const handleKeyUp = (e) => {
       setKeys(prev => ({ ...prev, [e.key]: false }));
+      // Prevent space from scrolling the page
+      if (e.key === ' ' || e.key === 'Space') {
+        e.preventDefault();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
