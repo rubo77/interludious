@@ -1,4 +1,6 @@
 // Ship class for player ship
+import { GRAVITY, ROTATION_SPEED } from '../core/constants.js';
+
 export class Ship {
   constructor(x, y) {
     this.x = x;
@@ -11,7 +13,7 @@ export class Ship {
     this.fuel = 100;
   }
 
-  update(dt, gravity = 0.055) {
+  update(dt, gravity = GRAVITY) {
     // Apply gravity (10% stronger)
     this.vy += gravity * dt;
 
@@ -36,12 +38,12 @@ export class Ship {
   }
 
   rotateLeft() {
-    this.angle -= 0.05;
+    this.angle -= ROTATION_SPEED;
     this.rotation = (this.angle * 180 / Math.PI) % 360;
   }
 
   rotateRight() {
-    this.angle += 0.05;
+    this.angle += ROTATION_SPEED;
     this.rotation = (this.angle * 180 / Math.PI) % 360;
   }
 
