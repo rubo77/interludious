@@ -738,11 +738,9 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       // Render particles
       particleSystem.current.render(ctx, camera.x, camera.y);
 
-      // Boundary collision (wrap around)
+      // Boundary collision (wrap around X axis only)
       if (ship.x < 0) ship.x = width;
       if (ship.x > width) ship.x = 0;
-      if (ship.y < 0) ship.y = height;
-      if (ship.y > height) ship.y = 0;
 
       animationId = requestAnimationFrame(render);
     };
