@@ -129,6 +129,10 @@ function App() {
                   <span>→ / D</span>
                   <span>Rotate Right</span>
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
+                  <span>Space</span>
+                  <span>Tractor Beam / Pod</span>
+                </div>
               </div>
             </div>
           </div>
