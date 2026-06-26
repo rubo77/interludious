@@ -87,7 +87,7 @@ update_version() {
   npm install --package-lock-only --quiet
   
   # Update Android versionCode in build.gradle
-  GRADLE_FILE="android/app/build.gradle"
+  GRADLE_FILE="interludious/app/build.gradle"
   if [ -f "$GRADLE_FILE" ]; then
     CURRENT_CODE=$(grep -oP 'versionCode\s+\K\d+' "$GRADLE_FILE")
     if [ -n "$CURRENT_CODE" ]; then
