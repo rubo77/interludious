@@ -514,8 +514,9 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
           const podClose = pod && Math.sqrt((ship.x - pod.x) ** 2 + (ship.y - pod.y) ** 2) < 50;
           if (podClose) {
             // Flying into sky with pod = level complete
-            setGameState('docking');
-            setDockingAnimation({ progress: 0, phase: 'flying' });
+            setGameState('levelcomplete');
+            setDockingAnimation(null);
+            if (onLevelComplete) onLevelComplete(currentLevel);
           } else {
             // Flying into sky without pod = reset game
             setLives(prev => {
