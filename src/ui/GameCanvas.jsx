@@ -150,6 +150,12 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         if (restartPos) {
           ship.setPosition(restartPos.x, restartPos.y);
           ship.setVelocity(0, 0);
+          // Reset camera to center on ship spawn, clamped to level bounds
+          const levelWidth = lenx * scaledSize;
+          const levelHeight = layout.length * scaledSize;
+          const camX = Math.max(0, Math.min(restartPos.x - width / 2, Math.max(0, levelWidth - width)));
+          const camY = Math.max(0, Math.min(restartPos.y - height / 2, Math.max(0, levelHeight - height)));
+          setCamera({ x: camX, y: camY });
         }
         setBunkers(bunkerPositions.map(bp => new Bunker(bp.x, bp.y, bp.type)));
         setButtons(buttonPositions.map(bp => new Button(bp.x, bp.y, bp.type)));
