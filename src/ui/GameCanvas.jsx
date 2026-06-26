@@ -11,7 +11,7 @@ import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
 import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY } from '../core/constants.js';
 
-export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange, level: levelProp, gravityMultiplier = 1.0 }) {
+export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange, level: levelProp, gravityMultiplier = 1.0, frozen = false }) {
   const canvasRef = useRef(null);
   const [ship] = useState(() => new Ship(width / 2, height / 2));
   const [keys, setKeys] = useState({});
@@ -339,6 +339,10 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         return newBullets;
       });
 
+      // Skip all updates if frozen (game over state with frozen canvas)
+      if (frozen) {
+        // Still render the scene but don't update anything
+      } else {
       // Update ship (frozen while exploding)
       if (!isDying) {
         ship.update(deltaTime, GRAVITY, gravityMultiplier);
@@ -496,6 +500,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         // Update particles
         particleSystem.current.update(deltaTime);
       }
+      } // End of frozen else block
 
       // Update bullets and check collision with ship
       setBullets(prev => {
