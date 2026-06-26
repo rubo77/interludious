@@ -51,6 +51,10 @@ function App() {
     setScore(newScore);
   };
 
+  const handleLivesChange = (newLives) => {
+    setLives(newLives);
+  };
+
   // Mobile detection
   useEffect(() => {
     const checkMobile = () => {
@@ -159,6 +163,7 @@ function App() {
                   onLevelComplete={handleLevelComplete}
                   onGameOver={handleGameOver}
                   onScoreChange={handleScoreChange}
+                  onLivesChange={handleLivesChange}
                   level={level}
                   gravityMultiplier={gravityMultiplier}
                   frozen={gameState === 'gameover'}
@@ -210,6 +215,7 @@ function App() {
                   onLevelComplete={handleLevelComplete}
                   onGameOver={handleGameOver}
                   onScoreChange={handleScoreChange}
+                  onLivesChange={handleLivesChange}
                   level={level}
                   gravityMultiplier={gravityMultiplier}
                   frozen={gameState === 'gameover'}

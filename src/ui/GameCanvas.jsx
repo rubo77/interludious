@@ -11,7 +11,7 @@ import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
 import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY } from '../core/constants.js';
 
-export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange, level: levelProp, gravityMultiplier = 1.0, frozen = false }) {
+export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange, onLivesChange, level: levelProp, gravityMultiplier = 1.0, frozen = false }) {
   const canvasRef = useRef(null);
   const [ship] = useState(() => new Ship(width / 2, height / 2));
   const [keys, setKeys] = useState({});
@@ -184,6 +184,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       setDockingAnimation(null);
       setScore(0);
       setLives(3);
+      if (onLivesChange) onLivesChange(3);
     }
   }, [levelProp, currentLevel]);
 
@@ -224,6 +225,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     const finalizeDeath = () => {
       setLives(prevLives => {
         const newLives = prevLives - 1;
+        if (onLivesChange) onLivesChange(newLives);
         if (newLives <= 0) {
           setGameState('gameover');
           if (onGameOver) onGameOver(score);
@@ -527,6 +529,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       if (ship.fuel <= 0) {
         setLives(prev => {
           const newLives = prev - 1;
+          if (onLivesChange) onLivesChange(newLives);
           if (newLives <= 0) {
             setGameState('gameover');
             if (onGameOver) onGameOver(score);
@@ -613,6 +616,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
             // Flying into sky without pod = reset game
             setLives(prev => {
               const newLives = prev - 1;
+              if (onLivesChange) onLivesChange(newLives);
               if (newLives <= 0) {
                 if (onGameOver) onGameOver(score);
               } else {
