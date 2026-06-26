@@ -241,7 +241,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
           if (phase === 'docking') {
             // Phase 1: Pod snaps to restart point
             pod.setPosition(restartPosition.x, restartPosition.y);
-            pod.setVelocity(0, 0);
+            pod.vx = 0;
+            pod.vy = 0;
             if (newProgress >= 0.3) {
               setDockingAnimation({ progress: 0.3, phase: 'flying' });
             } else {
@@ -343,7 +344,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
                 }
                 if (pod && podPosition) {
                   pod.setPosition(podPosition.x, podPosition.y);
-                  pod.setVelocity(0, 0);
+                  pod.vx = 0;
+                  pod.vy = 0;
                 }
               }
               return newLives;
@@ -372,7 +374,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
             }
             if (pod && podPosition) {
               pod.setPosition(podPosition.x, podPosition.y);
-              pod.setVelocity(0, 0);
+              pod.vx = 0;
+              pod.vy = 0;
             }
           }
           return newLives;
