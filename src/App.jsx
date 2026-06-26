@@ -13,6 +13,7 @@ function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [gravityMultiplier, setGravityMultiplier] = useState(1.0);
+  const [gameSession, setGameSession] = useState(0); // Increments on each new game to force GameCanvas remount
 
   const handleStartGame = () => {
     setGameState('playing');
@@ -21,6 +22,7 @@ function App() {
     setLevel(1);
     setFuel(100);
     setGravityMultiplier(1.0);
+    setGameSession(prev => prev + 1); // Force full GameCanvas reset
   };
 
   const handleStartLevel = (levelNum) => {
@@ -157,6 +159,7 @@ function App() {
               {/* Fullscreen canvas */}
               <div style={{ flex: 1, position: 'relative' }}>
                 <GameCanvas 
+                  key={`mobile-${gameSession}`}
                   width={window.innerWidth}
                   height={window.innerHeight - 50}
                   onFuelChange={setFuel} 
@@ -209,6 +212,7 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
                 <HUD score={score} lives={lives} level={level} fuel={fuel} />
                 <GameCanvas 
+                  key={`desktop-${gameSession}`}
                   width={800} 
                   height={600} 
                   onFuelChange={setFuel} 
