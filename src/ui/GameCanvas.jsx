@@ -31,6 +31,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
   const [podExploded, setPodExploded] = useState(false);
   const [podExplosionTime, setPodExplosionTime] = useState(null);
   const [podStartPosition, setPodStartPosition] = useState(null);
+  const [stars, setStars] = useState([]);
   const particleSystem = useRef(new ParticleSystem());
   const [lives, setLives] = useState(3);
   const [currentLevel, setCurrentLevel] = useState(levelProp || 1);
@@ -175,6 +176,21 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         setBunkers(bunkerPositions.map(bp => new Bunker(bp.x, bp.y, bp.type)));
         setButtons(buttonPositions.map(bp => new Button(bp.x, bp.y, bp.type)));
         setSliders(sliderPositions.map(sp => new Slider(sp.x, sp.y, sp.type, 'horizontal')));
+
+        // Generate stars for the sky - spread across entire level height
+        const starCount = 300;
+        const newStars = [];
+        const levelHeight = layout.length * 16;
+        for (let i = 0; i < starCount; i++) {
+          newStars.push({
+            x: Math.random() * lenx * 16,
+            y: Math.random() * levelHeight,
+            size: Math.random() * 2 + 0.5,
+            flickerSpeed: Math.random() * 0.1 + 0.05,
+            flickerOffset: Math.random() * Math.PI * 2
+          });
+        }
+        setStars(newStars);
       } catch (error) {
         console.error('[LEVEL] Failed to load:', error);
       }
@@ -692,6 +708,19 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       ctx.save();
       if (screenShake.intensity > 0) {
         ctx.translate(screenShake.x, screenShake.y);
+      }
+
+      // Draw stars in the sky (before level tiles)
+      if (level && tilesetLoaded && stars.length > 0) {
+        const time = performance.now();
+        stars.forEach(star => {
+          const flicker = 0.5 + 0.5 * Math.sin(time * star.flickerSpeed + star.flickerOffset);
+          const alpha = 0.5 + 0.5 * flicker;
+          ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+          ctx.beginPath();
+          ctx.arc(star.x - camera.x, star.y - camera.y, star.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
       }
 
       // Draw level with camera offset
