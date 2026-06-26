@@ -37,6 +37,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
   const tileRenderer = useRef(new TileRenderer());
   const collision = useRef(new CollisionDetection(tileRenderer.current));
   const levelCompleteTriggered = useRef(false);
+  const shipDestroyed = useRef(false);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -153,6 +154,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
           ship.setVelocity(0, 0);
           // Reset level complete guard for the new level
           levelCompleteTriggered.current = false;
+          shipDestroyed.current = false;
           // Reset camera to center on ship spawn, clamped to level bounds
           const levelWidth = lenx * scaledSize;
           const levelHeight = layout.length * scaledSize;
@@ -196,6 +198,36 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
 
     let animationId;
     let lastTime = performance.now();
+
+    // Destroy the ship: explode, lose a life, respawn or game over (DRY helper)
+    const destroyShip = () => {
+      if (shipDestroyed.current) return;
+      shipDestroyed.current = true;
+      particleSystem.current.spawnExplosion(ship.x, ship.y, 40, '#ff6600');
+      setScreenShake({ x: 0, y: 0, intensity: 12 });
+      setLives(prevLives => {
+        const newLives = prevLives - 1;
+        if (newLives <= 0) {
+          setGameState('gameover');
+          if (onGameOver) onGameOver(score);
+        } else {
+          // Respawn at restart point
+          if (restartPosition) {
+            ship.setPosition(restartPosition.x, restartPosition.y);
+            ship.setVelocity(0, 0);
+            ship.fuel = 100;
+          }
+          if (pod && podPosition) {
+            pod.setPosition(podPosition.x, podPosition.y);
+            pod.vx = 0;
+            pod.vy = 0;
+          }
+          // Allow ship to be destroyed again after respawn
+          shipDestroyed.current = false;
+        }
+        return newLives;
+      });
+    };
 
     const render = () => {
       const currentTime = performance.now();
@@ -246,13 +278,11 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       // Update ship
       ship.update(deltaTime);
 
-      // Check collision with level
-      if (level && tilesetLoaded) {
+      // Check collision with level - touching a wall destroys the ship
+      if (level && tilesetLoaded && gameState === 'playing') {
         const collisionResult = collision.current.checkShipCollision(ship, level);
         if (collisionResult.collided) {
-          collision.current.resolveCollision(ship, collisionResult);
-          particleSystem.current.spawnSparks(ship.x, ship.y, 5);
-          setScreenShake({ x: 0, y: 0, intensity: 3 });
+          destroyShip();
         }
       }
 
@@ -412,29 +442,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
           const dy = bullet.y - ship.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
           if (distance < 15) {
-            // Ship hit by bullet
-            particleSystem.current.spawnExplosion(ship.x, ship.y, 30, '#ff6600');
-            setScreenShake({ x: 0, y: 0, intensity: 10 });
-            setLives(prevLives => {
-              const newLives = prevLives - 1;
-              if (newLives <= 0) {
-                setGameState('gameover');
-                if (onGameOver) onGameOver(score);
-              } else {
-                // Respawn at restart point
-                if (restartPosition) {
-                  ship.setPosition(restartPosition.x, restartPosition.y);
-                  ship.setVelocity(0, 0);
-                  ship.fuel = 100;
-                }
-                if (pod && podPosition) {
-                  pod.setPosition(podPosition.x, podPosition.y);
-                  pod.vx = 0;
-                  pod.vy = 0;
-                }
-              }
-              return newLives;
-            });
+            // Ship hit by bullet = destroy ship
+            destroyShip();
             return false;
           }
           
