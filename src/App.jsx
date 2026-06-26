@@ -127,11 +127,11 @@ function App() {
             <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', position: 'relative' }}>
               {/* HUD bar on top */}
               <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(0, 0, 0, 0.8)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', color: '#fff' }}>
-                  <span style={{ fontWeight: '600' }}>SCORE{score}</span>
-                  <span style={{ fontWeight: '600' }}>LIVES{'❤️'.repeat(lives)}</span>
-                  <span style={{ fontWeight: '600' }}>LEVEL{level}</span>
-                  <span style={{ fontWeight: '600' }}>FUEL</span>
+                <div style={{ display: 'flex', flexDirection: 'row', gap: '16px', fontSize: '12px', color: '#fff', alignItems: 'center' }}>
+                  <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>SCORE{score}</span>
+                  <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LIVES{'❤️'.repeat(lives)}</span>
+                  <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LEVEL{level}</span>
+                  <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>FUEL</span>
                 </div>
                 <button 
                   onClick={() => setShowMobileMenu(!showMobileMenu)}
