@@ -22,6 +22,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
   const [restartPosition, setRestartPosition] = useState(null);
   const [bunkers, setBunkers] = useState([]);
   const [bullets, setBullets] = useState([]);
+  const [playerBullets, setPlayerBullets] = useState([]);
   const [buttons, setButtons] = useState([]);
   const [sliders, setSliders] = useState([]);
   const [score, setScore] = useState(0);
@@ -211,6 +212,27 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       // Tractor beam (Space key)
       const tractorBeamActive = keys[' '] || keys['Space'];
 
+      // Player shooting (X key)
+      setPlayerBullets(prev => {
+        const newBullets = [...prev];
+        // Check if X is pressed and add cooldown logic
+        if (keys['x'] || keys['X']) {
+          // Simple cooldown: only shoot every ~10 frames
+          const lastShotTime = newBullets.length > 0 ? newBullets[newBullets.length - 1].time : 0;
+          if (performance.now() - lastShotTime > 150) { // 150ms cooldown
+            const bulletSpeed = 8;
+            newBullets.push({
+              x: ship.x + Math.sin(ship.angle) * 20,
+              y: ship.y - Math.cos(ship.angle) * 20,
+              vx: Math.sin(ship.angle) * bulletSpeed,
+              vy: -Math.cos(ship.angle) * bulletSpeed,
+              time: performance.now()
+            });
+          }
+        }
+        return newBullets;
+      });
+
       // Update ship
       ship.update(deltaTime);
 
@@ -299,6 +321,39 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
           }
         });
         setBullets(newBullets);
+
+        // Update player bullets and check collision with bunkers
+        setPlayerBullets(prev => {
+          return prev.filter(bullet => {
+            // Update position
+            bullet.x += bullet.vx * deltaTime;
+            bullet.y += bullet.vy * deltaTime;
+
+            // Check collision with bunkers
+            let bulletHit = false;
+            const newBunkers = bunkers.filter(bunker => {
+              const dx = bullet.x - bunker.x;
+              const dy = bullet.y - bunker.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              if (distance < 20) {
+                bulletHit = true;
+                setScore(prev => prev + 50);
+                particleSystem.current.spawnExplosion(bunker.x, bunker.y, 10);
+                return false; // Remove bunker
+              }
+              return true;
+            });
+            setBunkers(newBunkers);
+
+            // Remove bullet if it hit a bunker or is out of bounds
+            if (bulletHit) return false;
+            if (bullet.x < -100 || bullet.x > level.width * 16 + 100 ||
+                bullet.y < -100 || bullet.y > level.height * 16 + 100) {
+              return false;
+            }
+            return true;
+          });
+        });
 
         // Update buttons and check collision with ship
         buttons.forEach(button => {
@@ -575,6 +630,26 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         ctx.restore();
       });
 
+      // Draw player bullets with camera offset
+      playerBullets.forEach(bullet => {
+        ctx.save();
+        ctx.translate(bullet.x - camera.x, bullet.y - camera.y);
+        
+        // Player bullet (cyan circle)
+        ctx.fillStyle = '#00ffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Player bullet glow
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+      });
+
       // Draw pod with camera offset
       if (pod) {
         ctx.save();
@@ -639,7 +714,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera, pod, restartPosition, gameState, dockingAnimation, score, lives, currentLevel, onLevelComplete, onGameOver, onScoreChange, bunkers, bullets, buttons, sliders, screenShake]);
+  }, [ship, keys, width, height, onFuelChange, level, tilesetLoaded, camera, pod, restartPosition, gameState, dockingAnimation, score, lives, currentLevel, onLevelComplete, onGameOver, onScoreChange, bunkers, bullets, playerBullets, buttons, sliders, screenShake]);
 
   return (
     <canvas

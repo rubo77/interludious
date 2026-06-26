@@ -133,6 +133,10 @@ function App() {
                   <span>Space</span>
                   <span>Tractor Beam / Pod</span>
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
+                  <span>X</span>
+                  <span>Shoot</span>
+                </div>
               </div>
             </div>
           </div>
