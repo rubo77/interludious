@@ -38,6 +38,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
   const collision = useRef(new CollisionDetection(tileRenderer.current));
   const levelCompleteTriggered = useRef(false);
   const shipDestroyed = useRef(false);
+  const deathAnim = useRef({ active: false, timeLeft: 0 });
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -155,6 +156,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
           // Reset level complete guard for the new level
           levelCompleteTriggered.current = false;
           shipDestroyed.current = false;
+          deathAnim.current = { active: false, timeLeft: 0 };
           // Reset camera to center on ship spawn, clamped to level bounds
           const levelWidth = lenx * scaledSize;
           const levelHeight = layout.length * scaledSize;
@@ -199,12 +201,23 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     let animationId;
     let lastTime = performance.now();
 
-    // Destroy the ship: explode, lose a life, respawn or game over (DRY helper)
+    // Destroy the ship: start ~1s explosion animation, then game over or respawn (DRY helper)
     const destroyShip = () => {
       if (shipDestroyed.current) return;
       shipDestroyed.current = true;
-      particleSystem.current.spawnExplosion(ship.x, ship.y, 40, '#ff6600');
-      setScreenShake({ x: 0, y: 0, intensity: 12 });
+      // Big explosion with debris flying apart
+      particleSystem.current.spawnExplosion(ship.x, ship.y, 80, '#ff6600');
+      particleSystem.current.spawnExplosion(ship.x, ship.y, 40, '#ffff00');
+      particleSystem.current.spawnExplosion(ship.x, ship.y, 30, '#00ff00');
+      setScreenShake({ x: 0, y: 0, intensity: 15 });
+      ship.setVelocity(0, 0);
+      ship.setThrust(false);
+      // Start ~1s death animation (60 frames at 60fps)
+      deathAnim.current = { active: true, timeLeft: 60 };
+    };
+
+    // Finalize death after the explosion animation: lose a life, respawn or game over
+    const finalizeDeath = () => {
       setLives(prevLives => {
         const newLives = prevLives - 1;
         if (newLives <= 0) {
@@ -234,21 +247,41 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       const deltaTime = (currentTime - lastTime) / 16.67; // Normalize to 1.0 at 60fps
       lastTime = currentTime;
 
-      // Handle input
-      if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
-        ship.rotateLeft();
+      // Death animation: explode for ~1s with debris, then game over or respawn
+      const isDying = deathAnim.current.active;
+      if (isDying) {
+        deathAnim.current.timeLeft -= deltaTime;
+        // Keep spawning debris for a lively explosion
+        if (Math.random() < 0.4) {
+          particleSystem.current.spawnExplosion(
+            ship.x + (Math.random() - 0.5) * 40,
+            ship.y + (Math.random() - 0.5) * 40,
+            6, '#ff9900'
+          );
+        }
+        if (deathAnim.current.timeLeft <= 0) {
+          deathAnim.current.active = false;
+          finalizeDeath();
+        }
       }
-      if (keys['ArrowRight'] || keys['d'] || keys['D']) {
-        ship.rotateRight();
-      }
-      if (keys['ArrowUp'] || keys['w'] || keys['W']) {
-        ship.setThrust(true);
-        // Spawn thrust particles
-        const thrustX = ship.x - Math.sin(ship.angle) * 15;
-        const thrustY = ship.y + Math.cos(ship.angle) * 15;
-        particleSystem.current.spawnThrust(thrustX, thrustY, ship.angle);
-      } else {
-        ship.setThrust(false);
+
+      // Handle input (skipped while the ship is exploding)
+      if (!isDying) {
+        if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+          ship.rotateLeft();
+        }
+        if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+          ship.rotateRight();
+        }
+        if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+          ship.setThrust(true);
+          // Spawn thrust particles
+          const thrustX = ship.x - Math.sin(ship.angle) * 15;
+          const thrustY = ship.y + Math.cos(ship.angle) * 15;
+          particleSystem.current.spawnThrust(thrustX, thrustY, ship.angle);
+        } else {
+          ship.setThrust(false);
+        }
       }
 
       // Tractor beam (Space key)
@@ -275,8 +308,10 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         return newBullets;
       });
 
-      // Update ship
-      ship.update(deltaTime);
+      // Update ship (frozen while exploding)
+      if (!isDying) {
+        ship.update(deltaTime);
+      }
 
       // Check collision with level - touching a wall destroys the ship
       if (level && tilesetLoaded && gameState === 'playing') {
@@ -583,33 +618,35 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         tileRenderer.current.render(ctx, level, -camera.x, -camera.y);
       }
 
-      // Draw ship with camera offset
-      ctx.save();
-      ctx.translate(ship.x - camera.x, ship.y - camera.y);
-      ctx.rotate(ship.angle);
+      // Draw ship with camera offset (hidden while exploding)
+      if (!isDying) {
+        ctx.save();
+        ctx.translate(ship.x - camera.x, ship.y - camera.y);
+        ctx.rotate(ship.angle);
 
-      // Ship body
-      ctx.fillStyle = '#00ff00';
-      ctx.beginPath();
-      ctx.moveTo(0, -15);
-      ctx.lineTo(10, 10);
-      ctx.lineTo(0, 5);
-      ctx.lineTo(-10, 10);
-      ctx.closePath();
-      ctx.fill();
-
-      // Thrust flame
-      if (ship.thrust > 0) {
-        ctx.fillStyle = '#ff6600';
+        // Ship body
+        ctx.fillStyle = '#00ff00';
         ctx.beginPath();
-        ctx.moveTo(-5, 10);
-        ctx.lineTo(0, 20 + Math.random() * 10);
-        ctx.lineTo(5, 10);
+        ctx.moveTo(0, -15);
+        ctx.lineTo(10, 10);
+        ctx.lineTo(0, 5);
+        ctx.lineTo(-10, 10);
         ctx.closePath();
         ctx.fill();
-      }
 
-      ctx.restore();
+        // Thrust flame
+        if (ship.thrust > 0) {
+          ctx.fillStyle = '#ff6600';
+          ctx.beginPath();
+          ctx.moveTo(-5, 10);
+          ctx.lineTo(0, 20 + Math.random() * 10);
+          ctx.lineTo(5, 10);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
 
       // Draw buttons with camera offset
       buttons.forEach(button => {
