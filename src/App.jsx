@@ -10,6 +10,8 @@ function App() {
   const [level, setLevel] = useState(1);
   const [fuel, setFuel] = useState(100);
   const [completedLevels, setCompletedLevels] = useState(new Set());
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const handleStartGame = () => {
     setGameState('playing');
@@ -39,6 +41,16 @@ function App() {
   const handleScoreChange = (newScore) => {
     setScore(newScore);
   };
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Keyboard shortcuts for game over screen
   useEffect(() => {
@@ -109,56 +121,126 @@ function App() {
       )}
       
       {gameState === 'playing' && (
-        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '20px', padding: '20px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-            <HUD score={score} lives={lives} level={level} fuel={fuel} />
-            <GameCanvas 
-              width={800} 
-              height={600} 
-              onFuelChange={setFuel} 
-              onLevelComplete={handleLevelComplete}
-              onGameOver={handleGameOver}
-              onScoreChange={handleScoreChange}
-              level={level}
-            />
-            <button onClick={() => setGameState('menu')} style={{ padding: '10px 20px', cursor: 'pointer' }}>
-              Back to Menu
-            </button>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '20px', background: 'linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.95))', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(10px)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)' }}>
-            <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontWeight: '600', fontSize: '14px', letterSpacing: '1px', color: '#888' }}>SELECT LEVEL</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
-              {levelButtons}
+        <>
+          {isMobile ? (
+            // Mobile layout: HUD bar on top, fullscreen canvas, hamburger menu
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', position: 'relative' }}>
+              {/* HUD bar on top */}
+              <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(0, 0, 0, 0.8)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', color: '#fff' }}>
+                  <span style={{ fontWeight: '600' }}>SCORE{score}</span>
+                  <span style={{ fontWeight: '600' }}>LIVES{'❤️'.repeat(lives)}</span>
+                  <span style={{ fontWeight: '600' }}>LEVEL{level}</span>
+                  <span style={{ fontWeight: '600' }}>FUEL</span>
+                </div>
+                <button 
+                  onClick={() => setShowMobileMenu(!showMobileMenu)}
+                  style={{ background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px' }}
+                >
+                  ☰
+                </button>
+              </div>
+
+              {/* Fullscreen canvas */}
+              <div style={{ flex: 1, position: 'relative' }}>
+                <GameCanvas 
+                  width={window.innerWidth}
+                  height={window.innerHeight - 50}
+                  onFuelChange={setFuel} 
+                  onLevelComplete={handleLevelComplete}
+                  onGameOver={handleGameOver}
+                  onScoreChange={handleScoreChange}
+                  level={level}
+                />
+              </div>
+
+              {/* Mobile menu overlay */}
+              {showMobileMenu && (
+                <div style={{ position: 'absolute', top: '50px', right: '0', width: '250px', background: 'rgba(20, 20, 20, 0.95)', backdropFilter: 'blur(10px)', borderLeft: '1px solid rgba(255, 255, 255, 0.1)', padding: '20px', zIndex: 100 }}>
+                  <button 
+                    onClick={() => setShowMobileMenu(false)}
+                    style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' }}
+                  >
+                    ✕
+                  </button>
+                  
+                  <h3 style={{ margin: '0 0 15px 0', color: '#fff', fontWeight: '600', fontSize: '14px' }}>SELECT LEVEL</h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+                    {levelButtons}
+                  </div>
+                  
+                  <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontWeight: '600', fontSize: '14px' }}>CONTROLS</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: '#aaa', marginBottom: '20px' }}>
+                    <div><span style={{ color: '#fff' }}>↑ / W</span> - Thrust</div>
+                    <div><span style={{ color: '#fff' }}>← / A</span> - Rotate Left</div>
+                    <div><span style={{ color: '#fff' }}>→ / D</span> - Rotate Right</div>
+                    <div><span style={{ color: '#fff' }}>Space</span> - Tractor Beam</div>
+                    <div><span style={{ color: '#fff' }}>X</span> - Shoot</div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => { setGameState('menu'); setShowMobileMenu(false); }}
+                    style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #444, #555)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
+                  >
+                    Back to Menu
+                  </button>
+                </div>
+              )}
             </div>
-            
-            <div style={{ marginTop: '20px' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontWeight: '600', fontSize: '14px', letterSpacing: '1px', color: '#888' }}>CONTROLS</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#aaa' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                  <span>↑ / W</span>
-                  <span>Thrust</span>
+          ) : (
+            // Desktop layout
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '20px', padding: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                <HUD score={score} lives={lives} level={level} fuel={fuel} />
+                <GameCanvas 
+                  width={800} 
+                  height={600} 
+                  onFuelChange={setFuel} 
+                  onLevelComplete={handleLevelComplete}
+                  onGameOver={handleGameOver}
+                  onScoreChange={handleScoreChange}
+                  level={level}
+                />
+                <button onClick={() => setGameState('menu')} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+                  Back to Menu
+                </button>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '20px', background: 'linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.95))', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(10px)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)' }}>
+                <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontWeight: '600', fontSize: '14px', letterSpacing: '1px', color: '#888' }}>SELECT LEVEL</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+                  {levelButtons}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                  <span>← / A</span>
-                  <span>Rotate Left</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                  <span>→ / D</span>
-                  <span>Rotate Right</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                  <span>Space</span>
-                  <span>Tractor Beam / Pod</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                  <span>X</span>
-                  <span>Shoot</span>
+                
+                <div style={{ marginTop: '20px' }}>
+                  <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontWeight: '600', fontSize: '14px', letterSpacing: '1px', color: '#888' }}>CONTROLS</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#aaa' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
+                      <span>↑ / W</span>
+                      <span>Thrust</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
+                      <span>← / A</span>
+                      <span>Rotate Left</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
+                      <span>→ / D</span>
+                      <span>Rotate Right</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
+                      <span>Space</span>
+                      <span>Tractor Beam / Pod</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
+                      <span>X</span>
+                      <span>Shoot</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
 
       {gameState === 'gameover' && (
