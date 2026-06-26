@@ -503,17 +503,15 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         }));
       }
 
-      // Check if flying into sky (above level)
+      // Check if flying into sky (above level top at y=0)
       if (level && tilesetLoaded && gameState === 'playing') {
-        const scaledSize = tileRenderer.current.getScaledTileSize();
-        const levelTop = level.height * scaledSize;
-        const skyThreshold = levelTop - SKY_THRESHOLD_OFFSET;
+        // The sky is above the level top (y=0), so the threshold is negative
+        const skyThreshold = -SKY_THRESHOLD_OFFSET;
         
         if (ship.y < skyThreshold) {
           // Check if pod is close to ship (within towing distance)
           const podDistance = pod ? Math.sqrt((ship.x - pod.x) ** 2 + (ship.y - pod.y) ** 2) : Infinity;
           const podClose = pod && (pod.towed || podDistance < 80);
-          console.log('[SKY] Reached sky threshold', { shipY: ship.y, skyThreshold, podDistance, podTowed: pod?.towed, podClose });
           if (podClose) {
             // Flying into sky with pod = level complete
             setGameState('levelcomplete');
