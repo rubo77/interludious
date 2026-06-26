@@ -9,7 +9,7 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED } from '../core/constants.js';
 
 export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange, level: levelProp }) {
   const canvasRef = useRef(null);
@@ -250,6 +250,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     let deltaTime = (currentTime - lastTimeRef.current) / 16.67; // Normalize to 1.0 at 60fps
     // Cap delta to avoid a "spiral of death" if a single frame is very slow
     if (deltaTime > 3) deltaTime = 3;
+    // Apply global game speed multiplier
+    deltaTime *= GAME_SPEED;
     lastTimeRef.current = currentTime;
 
       // Death animation: explode for ~1s with debris, then game over or respawn
