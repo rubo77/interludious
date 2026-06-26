@@ -13,9 +13,9 @@ export class Ship {
     this.fuel = 100;
   }
 
-  update(dt, gravity = GRAVITY) {
-    // Apply gravity (10% stronger)
-    this.vy += gravity * dt;
+  update(dt, gravity = GRAVITY, gravityMultiplier = 1.0) {
+    // Apply gravity (10% stronger, multiplied by difficulty multiplier)
+    this.vy += gravity * gravityMultiplier * dt;
 
     // Apply thrust
     if (this.thrust > 0) {

@@ -6,4 +6,3 @@
 - die anzahl herzen oben im scren zählt ncih nicht runter, wenn man ein leben verliert
 - der pod soll runter fallen, wenn man ihn loslässt
 - die kollision des pods soll auch geprüft werden, und wenn der etwas berührt, dann explodiert der zuerst, und eine halbe sekunde später auch das raumschiff
-- erstell ein dev/mobile-build.sh das alles für android studio vorbereitet, damit ich die app darin bauen kann mit capacitor wie im plan beschrieben: @web-porting-plan.md#L15 

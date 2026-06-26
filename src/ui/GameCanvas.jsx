@@ -9,9 +9,9 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET, GAME_SPEED } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY } from '../core/constants.js';
 
-export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange, level: levelProp }) {
+export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange, level: levelProp, gravityMultiplier = 1.0 }) {
   const canvasRef = useRef(null);
   const [ship] = useState(() => new Ship(width / 2, height / 2));
   const [keys, setKeys] = useState({});
@@ -341,7 +341,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
 
       // Update ship (frozen while exploding)
       if (!isDying) {
-        ship.update(deltaTime);
+        ship.update(deltaTime, GRAVITY, gravityMultiplier);
       }
 
       // Check collision with level - touching a wall destroys the ship

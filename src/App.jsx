@@ -12,6 +12,7 @@ function App() {
   const [completedLevels, setCompletedLevels] = useState(new Set());
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [gravityMultiplier, setGravityMultiplier] = useState(1.0);
 
   const handleStartGame = () => {
     setGameState('playing');
@@ -19,6 +20,7 @@ function App() {
     setLives(3);
     setLevel(1);
     setFuel(100);
+    setGravityMultiplier(1.0);
   };
 
   const handleStartLevel = (levelNum) => {
@@ -30,7 +32,14 @@ function App() {
   const handleLevelComplete = (completedLevel) => {
     setScore(prev => prev + 100);
     setCompletedLevels(prev => new Set([...prev, completedLevel]));
-    setLevel(prev => prev + 1);
+    
+    // If last level (6) completed, restart from level 1 with stronger gravity
+    if (completedLevel >= 6) {
+      setLevel(1);
+      setGravityMultiplier(prev => prev + 0.2); // Increase gravity by 20%
+    } else {
+      setLevel(prev => prev + 1);
+    }
     setGameState('playing');
   };
 
@@ -151,6 +160,7 @@ function App() {
                   onGameOver={handleGameOver}
                   onScoreChange={handleScoreChange}
                   level={level}
+                  gravityMultiplier={gravityMultiplier}
                 />
               </div>
 
@@ -200,6 +210,7 @@ function App() {
                   onGameOver={handleGameOver}
                   onScoreChange={handleScoreChange}
                   level={level}
+                  gravityMultiplier={gravityMultiplier}
                 />
                 <button onClick={() => setGameState('menu')} style={{ padding: '10px 20px', cursor: 'pointer' }}>
                   Back to Menu
