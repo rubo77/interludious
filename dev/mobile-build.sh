@@ -126,10 +126,13 @@ echo "Opening $PLATFORM project..."
 if [ "$PLATFORM" = "android" ]; then
   # Try snap installation first
   if [ -f "/snap/android-studio/current/bin/studio.sh" ]; then
-    /snap/android-studio/current/bin/studio.sh android
+    echo "Opening Android Studio from snap with:"
+    echo "/snap/android-studio/current/bin/studio.sh android"
   elif [ -f "/usr/local/android-studio/bin/studio.sh" ]; then
-    /usr/local/android-studio/bin/studio.sh android
+    echo "Opening Android Studio from /usr/local with:"
+    echo "/usr/local/android-studio/bin/studio.sh android"
   else
+    echo "Android Studio not found, using Capacitor open..."
     npx cap open android
   fi
 elif [ "$PLATFORM" = "ios" ]; then
