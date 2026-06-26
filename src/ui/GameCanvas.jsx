@@ -507,7 +507,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       if (level && tilesetLoaded && gameState === 'playing') {
         const scaledSize = tileRenderer.current.getScaledTileSize();
         const levelTop = level.height * scaledSize;
-        const skyThreshold = levelTop + SKY_THRESHOLD_OFFSET;
+        const skyThreshold = levelTop - SKY_THRESHOLD_OFFSET;
         
         if (ship.y < skyThreshold) {
           if (pod && pod.towed) {
