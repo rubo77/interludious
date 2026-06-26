@@ -6,4 +6,3 @@
 - die anzahl herzen oben im scren zählt ncih nicht runter, wenn man ein leben verliert
 - der pod soll runter fallen, wenn man ihn loslässt
 - die kollision des pods soll auch geprüft werden, und wenn der etwas berührt, dann explodiert der zuerst, und eine halbe sekunde später auch das raumschiff
-- baue die webapp und lade sie hoch mit dem command: ssh root@vm06.eclabs zu /var/kunden/webs/ruben/www/interludious.z11.de/ 
