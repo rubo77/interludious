@@ -9,6 +9,7 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
+import { SKY_THRESHOLD_OFFSET } from '../core/constants.js';
 
 export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange, level: levelProp }) {
   const canvasRef = useRef(null);
@@ -493,12 +494,49 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         // Smooth camera interpolation (lerp)
         const lerpFactor = 0.1;
         const clampedTargetX = Math.max(0, Math.min(targetX, Math.max(0, levelWidth - width)));
-        const clampedTargetY = Math.max(0, Math.min(targetY, Math.max(0, levelHeight - height)));
+        // Allow camera to go above level (sky), but clamp bottom
+        const clampedTargetY = Math.min(targetY, Math.max(0, levelHeight - height));
         
         setCamera(prev => ({
           x: prev.x + (clampedTargetX - prev.x) * lerpFactor,
           y: prev.y + (clampedTargetY - prev.y) * lerpFactor
         }));
+      }
+
+      // Check if flying into sky (above level)
+      if (level && tilesetLoaded && gameState === 'playing') {
+        const scaledSize = tileRenderer.current.getScaledTileSize();
+        const levelTop = level.height * scaledSize;
+        const skyThreshold = levelTop + SKY_THRESHOLD_OFFSET;
+        
+        if (ship.y < skyThreshold) {
+          if (pod && pod.towed) {
+            // Flying into sky with pod = level complete
+            setGameState('docking');
+            setDockingAnimation({ progress: 0, phase: 'flying' });
+          } else {
+            // Flying into sky without pod = reset game
+            setLives(prev => {
+              const newLives = prev - 1;
+              if (newLives <= 0) {
+                if (onGameOver) onGameOver(score);
+              } else {
+                // Respawn at restart point
+                if (restartPosition) {
+                  ship.setPosition(restartPosition.x, restartPosition.y);
+                  ship.setVelocity(0, 0);
+                  ship.fuel = 100;
+                }
+                if (pod && podPosition) {
+                  pod.setPosition(podPosition.x, podPosition.y);
+                  pod.vx = 0;
+                  pod.vy = 0;
+                }
+              }
+              return newLives;
+            });
+          }
+        }
       }
 
       // Report fuel to parent
