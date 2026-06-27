@@ -1,4 +1,4 @@
-package com.interludious.game;
+package de.z11.interludious;
 
 import com.getcapacitor.BridgeActivity;
 

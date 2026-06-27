@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Interludious</string>
     <string name="title_activity_main">Interludious</string>
-    <string name="package_name">com.interludious.game</string>
-    <string name="custom_url_scheme">com.interludious.game</string>
+    <string name="package_name">de.z11.interludious</string>
+    <string name="custom_url_scheme">de.z11.interludious</string>
 </resources>
