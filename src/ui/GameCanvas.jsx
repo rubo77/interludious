@@ -120,29 +120,17 @@ function getLiveTouchGeom(canvas, w, h) {
   }
   const rect = canvas.getBoundingClientRect();
   const hudBottomY = getHudCanvasBottom(canvas, w, h, HUD_CLIENT_PX);
-  // Calculate the actual gap from the canvas bottom edge to the screen bottom edge
-  // in canvas coordinates, so buttons stay a fixed screen-pixel distance from the
-  // visible bottom regardless of how much vertical space the canvas wrapper occupies.
-  const canvasBottomClient = rect.bottom;
-  const screenBottomClient = window.innerHeight;
-  const gapClient = screenBottomClient - canvasBottomClient;
-  const { scale } = getCanvasContentGeom(canvas, w, h);
-  // If canvas extends beyond screen bottom (gapClient negative), position buttons
-  // inside the visible canvas area instead of at the canvas bottom edge.
-  // The visible canvas height on screen is: rect.height - letterboxVertical
-  const elementRatio = rect.width / rect.height;
-  const canvasRatio = w / h;
-  let letterboxVertical = 0;
-  if (elementRatio <= canvasRatio) {
-    // fit-to-width: vertical letterboxing
-    const drawH = rect.width / canvasRatio;
-    letterboxVertical = (rect.height - drawH) / 2;
-  }
-  // Visible canvas bottom in canvas coordinates
-  const visibleBottomCanvas = (rect.height - letterboxVertical) / scale;
-  // Position buttons 20px from visible bottom, converted to canvas coordinates
-  const bottomGap = h - visibleBottomCanvas + (scale > 0 ? 20 / scale : 20);
-  console.log('[TOUCH_GEOM] ratio=' + ratio.toFixed(2) + ' elementRatio=' + elementRatio.toFixed(2) + ' canvasRatio=' + canvasRatio.toFixed(2) + ' letterboxVertical=' + letterboxVertical.toFixed(0) + ' visibleBottomCanvas=' + visibleBottomCanvas.toFixed(1) + ' bottomGap=' + bottomGap.toFixed(1) + ' rect.h=' + rect.height.toFixed(0) + ' rect.w=' + rect.width.toFixed(0));
+  // Position buttons relative to screen top, measured in screen pixels,
+  // then convert to canvas coordinates. This ensures buttons stay at a
+  // fixed distance from the screen bottom regardless of canvas letterboxing.
+  const screenHeight = window.innerHeight;
+  const buttonGapFromScreenBottom = 20; // 20px from screen bottom
+  const buttonScreenY = screenHeight - buttonGapFromScreenBottom - 50; // 50px button height
+  // Convert screen Y to canvas Y, accounting for letterboxing
+  const { scale, contentTopClient } = getCanvasContentGeom(canvas, w, h);
+  const buttonCanvasY = (buttonScreenY - contentTopClient) / scale;
+  const bottomGap = h - buttonCanvasY - 50; // gap from canvas bottom
+  console.log('[TOUCH_GEOM] ratio=' + ratio.toFixed(2) + ' screenHeight=' + screenHeight.toFixed(0) + ' buttonScreenY=' + buttonScreenY.toFixed(0) + ' contentTopClient=' + contentTopClient.toFixed(0) + ' scale=' + scale.toFixed(3) + ' buttonCanvasY=' + buttonCanvasY.toFixed(1) + ' bottomGap=' + bottomGap.toFixed(1));
   return {
     ratio,
     hudBottomY,
