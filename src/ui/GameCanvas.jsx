@@ -108,6 +108,23 @@ function getBottomGapCanvas(canvas, w, h, gapClientPx) {
   return scale > 0 ? gapClientPx / scale : gapClientPx;
 }
 
+// Live touch-button geometry measured directly from the canvas element.
+// Computed every frame (render) and on every hit-test so the buttons stay
+// pinned to the on-screen canvas bottom/HUD regardless of resize/orientation
+// event timing in the mobile webview (root-cause fix for stale resize state).
+// Shared by renderer and pointer hit-testing (DRY).
+function getLiveTouchGeom(canvas, w, h) {
+  const ratio = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : w / h;
+  if (!canvas) {
+    return { ratio, hudBottomY: 0, bottomGap: BOTTOM_GAP_CLIENT_PX };
+  }
+  return {
+    ratio,
+    hudBottomY: getHudCanvasBottom(canvas, w, h, HUD_CLIENT_PX),
+    bottomGap: getBottomGapCanvas(canvas, w, h, BOTTOM_GAP_CLIENT_PX),
+  };
+}
+
 // Convert pointer client coordinates to canvas-internal coordinates,
 // accounting for object-fit: contain letterboxing.
 function pointerToCanvas(canvas, clientX, clientY, w, h) {
@@ -141,9 +158,6 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [fireActive, setFireActive] = useState(false); // fire button pressed
   const [rotateLeftActive, setRotateLeftActive] = useState(false); // rotate left button pressed
   const [rotateRightActive, setRotateRightActive] = useState(false); // rotate right button pressed
-  const [screenRatio, setScreenRatio] = useState(() => (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 4 / 3));
-  const [hudBottomY, setHudBottomY] = useState(0); // canvas-space y where the DOM HUD ends
-  const [bottomGap, setBottomGap] = useState(BOTTOM_GAP_CLIENT_PX); // canvas-space gap above canvas bottom edge
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [tilesetLoaded, setTilesetLoaded] = useState(false);
@@ -199,22 +213,6 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
     };
   }, []);
 
-  // Track screen aspect ratio and HUD overlap so the touch buttons reposition
-  // on resize/orientation change.
-  useEffect(() => {
-    const onResize = () => {
-      setScreenRatio(window.innerWidth / window.innerHeight);
-      const canvas = canvasRef.current;
-      if (canvas) {
-        setHudBottomY(getHudCanvasBottom(canvas, width, height, HUD_CLIENT_PX));
-        setBottomGap(getBottomGapCanvas(canvas, width, height, BOTTOM_GAP_CLIENT_PX));
-      }
-    };
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [width, height]);
-
   // Pointer handling for all on-screen touch buttons (mouse + touch)
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -222,7 +220,10 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
 
     const getButtonAt = (clientX, clientY) => {
       const p = pointerToCanvas(canvas, clientX, clientY, width, height);
-      return getTouchButtonRects(width, height, screenRatio, hudBottomY, bottomGap).find(
+      // Measure button geometry live so hit-testing matches the rendered
+      // positions even after orientation/resize without relying on event state.
+      const { ratio, hudBottomY, bottomGap } = getLiveTouchGeom(canvas, width, height);
+      return getTouchButtonRects(width, height, ratio, hudBottomY, bottomGap).find(
         (b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h
       );
     };
@@ -258,7 +259,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [width, height, screenRatio, hudBottomY, bottomGap]);
+  }, [width, height]);
 
   useEffect(() => {
     const loadAssets = async () => {
@@ -1164,7 +1165,11 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       // Transparent buttons, highlight when active.
       // Render after screen shake restore to ensure they are in correct position.
       ctx.textAlign = 'center';
-      const touchButtons = getTouchButtonRects(width, height, screenRatio, hudBottomY, bottomGap);
+      // Measure geometry live each frame so the bottom buttons stay pinned a
+      // fixed screen-pixel distance from the on-screen canvas bottom on any
+      // aspect ratio, independent of resize/orientation event timing.
+      const { ratio: liveRatio, hudBottomY: liveHudBottomY, bottomGap: liveBottomGap } = getLiveTouchGeom(canvasRef.current, width, height);
+      const touchButtons = getTouchButtonRects(width, height, liveRatio, liveHudBottomY, liveBottomGap);
       for (const btn of touchButtons) {
         let active = false;
         switch (btn.type) {
