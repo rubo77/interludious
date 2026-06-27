@@ -22,8 +22,8 @@ function getTractorButtonRects(w, h, ratio) {
       { x: w - bw - 10, y, w: bw, h: bh, label: 'POD', font: '14px Arial' },
     ];
   }
-  const bh = 60;
-  return [{ x: 10, y: h - bh - 10, w: w - 20, h: bh, label: 'POD (Traktorstrahl)', font: '16px Arial' }];
+  const bh = 60, margin = 10;
+  return [{ x: margin, y: h - bh - margin, w: w - 2 * margin, h: bh, label: 'POD (Traktorstrahl)', font: '16px Arial' }];
 }
 
 // Convert pointer client coordinates to canvas-internal coordinates,
