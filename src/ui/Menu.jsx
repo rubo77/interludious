@@ -1,6 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 export default function Menu({ onStart }) {
+  // Allow starting the game with Space or Enter
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        onStart();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onStart]);
+
   return (
     <div style={{ 
       display: 'flex', 
