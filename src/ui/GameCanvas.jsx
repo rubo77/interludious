@@ -143,7 +143,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [rotateRightActive, setRotateRightActive] = useState(false); // rotate right button pressed
   const [screenRatio, setScreenRatio] = useState(() => (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 4 / 3));
   const [hudBottomY, setHudBottomY] = useState(0); // canvas-space y where the DOM HUD ends
-  const [bottomGap, setBottomGap] = useState(BOTTOM_GAP_CLIENT_PX);
+  const [bottomGap, setBottomGap] = useState(BOTTOM_GAP_CLIENT_PX); // canvas-space gap above canvas bottom edge
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [tilesetLoaded, setTilesetLoaded] = useState(false);
