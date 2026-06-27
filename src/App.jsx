@@ -136,7 +136,7 @@ function App() {
   }
 
   return (
-    <div className="app" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100vw', height: '100vh', backgroundColor: '#000', color: '#fff', position: 'relative' }}>
+    <div className="app" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100vw', height: '100vh', backgroundColor: '#000', color: '#fff', position: 'relative', overflow: 'hidden', touchAction: 'none' }}>
       {gameState === 'menu' && (
         <Menu onStart={handleStartGame} />
       )}
