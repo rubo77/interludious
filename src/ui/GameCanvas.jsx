@@ -13,12 +13,12 @@ import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHE
 
 // Client-space height of the DOM HUD overlay (App.jsx top bar).
 // Used to keep the top touch buttons (fire/rotate) below the HUD in every layout.
-const HUD_CLIENT_PX = 40;
+const HUD_CLIENT_PX = 50;
 
 // Client-space gap (in screen pixels) kept above the canvas bottom edge for the
 // bottom touch buttons (thrust/POD), so the gap does not "wander" when the canvas
 // is scaled to different screen sizes.
-const BOTTOM_GAP_CLIENT_PX = 10;
+const BOTTOM_GAP_CLIENT_PX = 20;
 
 // Geometry of all touch control buttons in canvas-internal coordinates.
 // Returns an array of button objects with type, position, size, label, and color.
@@ -45,11 +45,10 @@ function getTouchButtonRects(w, h, ratio, topOffset = 0, bottomGap = 10) {
       { type: 'pod', x: w - bw - 10, y, w: bw, h: bh, label: 'POD', font: '14px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)' }
     );
   } else {
-    const bh = 60;
-    // Make the bottom POD button narrower to leave room for thrust buttons in corners
+    // Bottom POD button: same height as thrust buttons (btnSize)
     const podWidth = w - 2 * (btnSize + margin * 2);
     buttons.push(
-      { type: 'pod', x: btnSize + margin * 2, y: h - bh - bottomGap, w: podWidth, h: bh, label: 'POD (Traktorstrahl)', font: '16px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)' }
+      { type: 'pod', x: btnSize + margin * 2, y: h - btnSize - bottomGap, w: podWidth, h: btnSize, label: 'POD (Traktorstrahl)', font: '16px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)' }
     );
   }
 
@@ -144,7 +143,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [rotateRightActive, setRotateRightActive] = useState(false); // rotate right button pressed
   const [screenRatio, setScreenRatio] = useState(() => (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 4 / 3));
   const [hudBottomY, setHudBottomY] = useState(0); // canvas-space y where the DOM HUD ends
-  const [bottomGap, setBottomGap] = useState(BOTTOM_GAP_CLIENT_PX); // canvas-space gap above canvas bottom edge
+  const [bottomGap, setBottomGap] = useState(BOTTOM_GAP_CLIENT_PX);
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [tilesetLoaded, setTilesetLoaded] = useState(false);
