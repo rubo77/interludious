@@ -9,12 +9,53 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD } from '../core/constants.js';
+
+// Geometry of the tractor-beam touch button(s) in canvas-internal coordinates.
+// ratio > threshold -> two side buttons (left & right); otherwise one wide bottom button.
+// Shared by both the renderer and the pointer hit-testing (DRY).
+function getTractorButtonRects(w, h, ratio) {
+  if (ratio > TOUCH_BUTTON_RATIO_THRESHOLD) {
+    const bw = 60, bh = 120, y = (h - bh) / 2;
+    return [
+      { x: 10, y, w: bw, h: bh, label: 'POD', font: '14px Arial' },
+      { x: w - bw - 10, y, w: bw, h: bh, label: 'POD', font: '14px Arial' },
+    ];
+  }
+  const bh = 60;
+  return [{ x: 10, y: h - bh - 10, w: w - 20, h: bh, label: 'POD (Traktorstrahl)', font: '16px Arial' }];
+}
+
+// Convert pointer client coordinates to canvas-internal coordinates,
+// accounting for object-fit: contain letterboxing.
+function pointerToCanvas(canvas, clientX, clientY, w, h) {
+  const rect = canvas.getBoundingClientRect();
+  const elementRatio = rect.width / rect.height;
+  const canvasRatio = w / h;
+  let drawW, drawH, offsetX, offsetY;
+  if (elementRatio > canvasRatio) {
+    drawH = rect.height;
+    drawW = drawH * canvasRatio;
+    offsetX = (rect.width - drawW) / 2;
+    offsetY = 0;
+  } else {
+    drawW = rect.width;
+    drawH = drawW / canvasRatio;
+    offsetX = 0;
+    offsetY = (rect.height - drawH) / 2;
+  }
+  return {
+    x: (clientX - rect.left - offsetX) / drawW * w,
+    y: (clientY - rect.top - offsetY) / drawH * h,
+  };
+}
 
 export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, onFuelChange, onLevelComplete, onGameOver, onScoreChange, onLivesChange, level: levelProp, gravityMultiplier = 1.0, frozen = false }) {
   const canvasRef = useRef(null);
   const [ship] = useState(() => new Ship(width / 2, height / 2));
   const [keys, setKeys] = useState({});
+  const [touchActive, setTouchActive] = useState(false); // tractor-beam touch button pressed
+  const [screenRatio, setScreenRatio] = useState(() => (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 4 / 3));
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [tilesetLoaded, setTilesetLoaded] = useState(false);
@@ -69,6 +110,44 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
+
+  // Track screen aspect ratio so the touch button(s) reposition on resize/orientation change
+  useEffect(() => {
+    const onResize = () => setScreenRatio(window.innerWidth / window.innerHeight);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Pointer handling for the on-screen tractor-beam button(s) (mouse + touch)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const isInsideButton = (clientX, clientY) => {
+      const p = pointerToCanvas(canvas, clientX, clientY, width, height);
+      return getTractorButtonRects(width, height, screenRatio).some(
+        (b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h
+      );
+    };
+
+    const handlePointerDown = (e) => {
+      if (isInsideButton(e.clientX, e.clientY)) {
+        e.preventDefault();
+        setTouchActive(true);
+      }
+    };
+    const handlePointerUp = () => setTouchActive(false);
+
+    canvas.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+
+    return () => {
+      canvas.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, [width, height, screenRatio]);
 
   useEffect(() => {
     const loadAssets = async () => {
@@ -349,8 +428,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         }
       }
 
-      // Tractor beam (Space key)
-      const tractorBeamActive = keys[' '] || keys['Space'];
+      // Tractor beam (Space key or on-screen touch button)
+      const tractorBeamActive = keys[' '] || keys['Space'] || touchActive;
 
       // Tractor beam raycast: beam shoots straight down until it hits the first obstacle.
       // Disabled while the pod is being towed (docked).
@@ -972,53 +1051,21 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       // Render particles
       particleSystem.current.render(ctx, camera.x, camera.y);
 
-      // Draw touch tractor beam button (inside canvas)
-      // Use actual screen dimensions ratio, not internal canvas dimensions
-      // Use side buttons for ratio in range (TOUCH_BUTTON_RATIO_SIDE_MIN < ratio <= TOUCH_BUTTON_RATIO_SIDE_MAX)
-      // Use bottom button for ratio outside this range
-      if (screenRatio > TOUCH_BUTTON_RATIO_SIDE_MIN && screenRatio <= TOUCH_BUTTON_RATIO_SIDE_MAX) {
-        // Side buttons (landscape)
-        const buttonWidth = 60;
-        const buttonHeight = 120;
-        const buttonColor = touchActive ? 'rgba(255, 255, 0, 0.5)' : 'rgba(255, 255, 0, 0.2)';
-        const borderColor = 'rgba(255, 255, 0, 0.5)';
-        
-        // Left button
+      // Draw touch tractor beam button(s) (inside canvas).
+      // Geometry comes from the shared helper so rendering and hit-testing stay in sync (DRY).
+      // Transparent buttons, highlight yellow when active.
+      const buttonColor = touchActive ? 'rgba(255, 255, 0, 0.5)' : 'rgba(255, 255, 0, 0.2)';
+      const borderColor = 'rgba(255, 255, 0, 0.5)';
+      ctx.textAlign = 'center';
+      for (const btn of getTractorButtonRects(width, height, screenRatio)) {
         ctx.fillStyle = buttonColor;
-        ctx.fillRect(10, (height - buttonHeight) / 2, buttonWidth, buttonHeight);
+        ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
         ctx.strokeStyle = borderColor;
         ctx.lineWidth = 2;
-        ctx.strokeRect(10, (height - buttonHeight) / 2, buttonWidth, buttonHeight);
+        ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
         ctx.fillStyle = '#fff';
-        ctx.font = '14px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('POD', 10 + buttonWidth / 2, (height - buttonHeight) / 2 + buttonHeight / 2 + 5);
-        
-        // Right button
-        ctx.fillStyle = buttonColor;
-        ctx.fillRect(width - buttonWidth - 10, (height - buttonHeight) / 2, buttonWidth, buttonHeight);
-        ctx.strokeStyle = borderColor;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(width - buttonWidth - 10, (height - buttonHeight) / 2, buttonWidth, buttonHeight);
-        ctx.fillStyle = '#fff';
-        ctx.font = '14px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('POD', width - buttonWidth - 10 + buttonWidth / 2, (height - buttonHeight) / 2 + buttonHeight / 2 + 5);
-      } else {
-        // Portrait: button at bottom
-        const buttonHeight = 60;
-        const buttonColor = touchActive ? 'rgba(255, 255, 0, 0.5)' : 'rgba(255, 255, 0, 0.2)';
-        const borderColor = 'rgba(255, 255, 0, 0.5)';
-        
-        ctx.fillStyle = buttonColor;
-        ctx.fillRect(10, height - buttonHeight - 10, width - 20, buttonHeight);
-        ctx.strokeStyle = borderColor;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(10, height - buttonHeight - 10, width - 20, buttonHeight);
-        ctx.fillStyle = '#fff';
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('POD (Traktorstrahl)', width / 2, height - buttonHeight - 10 + buttonHeight / 2 + 5);
+        ctx.font = btn.font;
+        ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2 + 5);
       }
 
       // X-axis wrapping based on level width, not canvas width

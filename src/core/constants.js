@@ -23,3 +23,8 @@ export const POD_TETHER_DAMPING = 0.12; // Damping of the tow tether to prevent 
 export const POD_HOLDER_OFFSET = 16; // Pixels the pod sits ABOVE its holder marker (avoids holder collision)
 export const POD_TETHER_WIDTH = 1; // Width of the visible tether line (pixels)
 
+// Touch controls
+// Screen aspect ratio (width / height) at which the tractor-beam touch button switches position:
+// ratio > threshold -> side buttons (left & right), ratio <= threshold -> single bottom button
+export const TOUCH_BUTTON_RATIO_THRESHOLD = 1.6;
+
