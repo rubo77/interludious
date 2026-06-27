@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import HamburgerMenu from './HamburgerMenu';
 
-export default function Menu({ onStart, levelButtons, onBackToMenu, appVersion }) {
+export default function Menu({ onStart, levelButtons, onBackToMenu, appVersion, showTouchButtons, onToggleTouchButtons }) {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   // Allow starting the game with Space or Enter
   useEffect(() => {
@@ -47,6 +47,8 @@ export default function Menu({ onStart, levelButtons, onBackToMenu, appVersion }
         levelButtons={levelButtons || []}
         onBackToMenu={onBackToMenu}
         appVersion={appVersion}
+        showTouchButtons={showTouchButtons}
+        onToggleTouchButtons={onToggleTouchButtons}
       />
       <div id="menu-content" style={{
         textAlign: 'center',

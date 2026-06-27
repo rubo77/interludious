@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 
-export default function HamburgerMenu({ isOpen, onClose, levelButtons, onBackToMenu, appVersion }) {
+export default function HamburgerMenu({ isOpen, onClose, levelButtons, onBackToMenu, appVersion, showTouchButtons, onToggleTouchButtons }) {
   const menuRef = useRef(null);
 
   if (!isOpen) return null;
@@ -35,6 +35,28 @@ export default function HamburgerMenu({ isOpen, onClose, levelButtons, onBackToM
         <div><span style={{ color: '#fff' }}>→ / D</span> - Rotate Right</div>
         <div><span style={{ color: '#fff' }}>Space</span> - Tractor Beam</div>
         <div><span style={{ color: '#fff' }}>X</span> - Shoot</div>
+      </div>
+
+      <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontWeight: '600', fontSize: '14px' }}>SETTINGS</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: '#aaa', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ color: '#fff' }}>Touch Buttons</span>
+          <button
+            onClick={onToggleTouchButtons}
+            style={{
+              padding: '4px 12px',
+              background: showTouchButtons ? 'linear-gradient(135deg, #00ff88, #00cc66)' : 'linear-gradient(135deg, #444, #555)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: '600'
+            }}
+          >
+            {showTouchButtons ? 'ON' : 'OFF'}
+          </button>
+        </div>
       </div>
 
       {onBackToMenu && (

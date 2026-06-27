@@ -162,7 +162,7 @@ function pointerToCanvas(canvas, clientX, clientY, w, h) {
   };
 }
 
-export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, onFuelChange, onLevelComplete, onGameOver, onScoreChange, onLivesChange, level: levelProp, gravityMultiplier = 1.0, frozen = false }) {
+export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, onFuelChange, onLevelComplete, onGameOver, onScoreChange, onLivesChange, level: levelProp, gravityMultiplier = 1.0, frozen = false, showTouchButtons = true }) {
   const canvasRef = useRef(null);
   const [ship] = useState(() => new Ship(width / 2, height / 2));
   const [keys, setKeys] = useState({});
@@ -236,6 +236,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
     if (!canvas) return;
 
     const getButtonAt = (clientX, clientY) => {
+      if (!showTouchButtons) return null;
       const p = pointerToCanvas(canvas, clientX, clientY, width, height);
       // Measure button geometry live so hit-testing matches the rendered
       // positions even after orientation/resize without relying on event state.
@@ -1224,7 +1225,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       // fixed screen-pixel distance from the on-screen canvas bottom on any
       // aspect ratio, independent of resize/orientation event timing.
       const { ratio: liveRatio, hudBottomY: liveHudBottomY, bottomGap: liveBottomGap } = getLiveTouchGeom(canvasRef.current, width, height);
-      const touchButtons = getTouchButtonRects(width, height, liveRatio, liveHudBottomY, liveBottomGap);
+      const touchButtons = showTouchButtons ? getTouchButtonRects(width, height, liveRatio, liveHudBottomY, liveBottomGap) : [];
       for (const btn of touchButtons) {
         let active = false;
         switch (btn.type) {

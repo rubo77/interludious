@@ -17,6 +17,20 @@ function App() {
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showTouchButtons, setShowTouchButtons] = useState(() => {
+    const stored = localStorage.getItem('thrust_showTouchButtons');
+    if (stored !== null) {
+      return JSON.parse(stored);
+    }
+    // Default: on for mobile, off for laptop
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+    return isMobile;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('thrust_showTouchButtons', JSON.stringify(showTouchButtons));
+  }, [showTouchButtons]);
+
   const [gravityMultiplier, setGravityMultiplier] = useState(1.0);
   const [gameSession, setGameSession] = useState(0); // Increments on each new game to force GameCanvas remount
 
@@ -163,6 +177,8 @@ function App() {
             levelButtons={generateLevelButtons()}
             onBackToMenu={() => {}}
             appVersion={APP_VERSION}
+            showTouchButtons={showTouchButtons}
+            onToggleTouchButtons={() => setShowTouchButtons(!showTouchButtons)}
           />
         </div>
       )}
@@ -206,6 +222,7 @@ function App() {
                 level={level}
                 gravityMultiplier={gravityMultiplier}
                 frozen={gameState === 'gameover' || gameState === 'levelcomplete'}
+                showTouchButtons={showTouchButtons}
               />
 
               {/* Game over overlay - centered over canvas */}
@@ -248,6 +265,8 @@ function App() {
             levelButtons={generateLevelButtons(() => setShowMobileMenu(false))}
             onBackToMenu={() => { setGameState('menu'); setShowMobileMenu(false); }}
             appVersion={APP_VERSION}
+            showTouchButtons={showTouchButtons}
+            onToggleTouchButtons={() => setShowTouchButtons(!showTouchButtons)}
           />
         </>
       )}
