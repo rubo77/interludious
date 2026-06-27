@@ -15,18 +15,27 @@ import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHE
 // Used to keep the top touch buttons (fire/rotate) below the HUD in every layout.
 const HUD_CLIENT_PX = 40;
 
+// Client-space gap (in screen pixels) kept above the canvas bottom edge for the
+// bottom touch buttons (thrust/POD), so the gap does not "wander" when the canvas
+// is scaled to different screen sizes.
+const BOTTOM_GAP_CLIENT_PX = 10;
+
 // Geometry of all touch control buttons in canvas-internal coordinates.
 // Returns an array of button objects with type, position, size, label, and color.
 // Shared by both the renderer and the pointer hit-testing (DRY).
 // topOffset is the canvas-space y where the DOM HUD ends, so the fire/rotate
 // buttons stay below the HUD regardless of layout/letterboxing.
-function getTouchButtonRects(w, h, ratio, topOffset = 0) {
+// bottomGap is the canvas-space gap above the canvas bottom edge, derived from a
+// fixed screen-pixel value so it stays visually constant across screen sizes.
+function getTouchButtonRects(w, h, ratio, topOffset = 0, bottomGap = 10) {
   const margin = 10;
   const btnSize = 50;
   const buttons = [];
 
   // Top buttons (fire/rotate) start just below the HUD.
   const topY = topOffset + margin;
+  // Bottom buttons sit a fixed screen-pixel gap above the canvas bottom edge.
+  const bottomBtnY = h - btnSize - bottomGap;
 
   // POD (tractor beam) buttons
   if (ratio > TOUCH_BUTTON_RATIO_THRESHOLD) {
@@ -40,14 +49,14 @@ function getTouchButtonRects(w, h, ratio, topOffset = 0) {
     // Make the bottom POD button narrower to leave room for thrust buttons in corners
     const podWidth = w - 2 * (btnSize + margin * 2);
     buttons.push(
-      { type: 'pod', x: btnSize + margin * 2, y: h - bh - margin, w: podWidth, h: bh, label: 'POD (Traktorstrahl)', font: '16px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)' }
+      { type: 'pod', x: btnSize + margin * 2, y: h - bh - bottomGap, w: podWidth, h: bh, label: 'POD (Traktorstrahl)', font: '16px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)' }
     );
   }
 
   // Thrust buttons (bottom corners)
   buttons.push(
-    { type: 'thrust', x: margin, y: h - btnSize - margin, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)' },
-    { type: 'thrust', x: w - btnSize - margin, y: h - btnSize - margin, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)' }
+    { type: 'thrust', x: margin, y: bottomBtnY, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)' },
+    { type: 'thrust', x: w - btnSize - margin, y: bottomBtnY, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)' }
   );
 
   // Fire button (always top-right, below HUD)
@@ -65,12 +74,13 @@ function getTouchButtonRects(w, h, ratio, topOffset = 0) {
   return buttons;
 }
 
-// Compute the canvas-space y where the DOM HUD overlay ends, accounting for
-// object-fit: contain letterboxing. The HUD sits at client top: 0; in side
-// layout the canvas reaches near the screen top so the HUD overlaps it.
-function getHudCanvasBottom(canvas, w, h, hudClientPx) {
+// Compute the canvas content letterbox geometry (object-fit: contain).
+// Returns the on-screen scale (screen px per canvas px) and the client-space
+// top of the drawn canvas content. Shared by the HUD-overlap and bottom-gap
+// derivations (DRY).
+function getCanvasContentGeom(canvas, w, h) {
   const rect = canvas.getBoundingClientRect();
-  if (rect.height === 0) return 0;
+  if (rect.height === 0) return { scale: 1, contentTopClient: rect.top };
   const elementRatio = rect.width / rect.height;
   const canvasRatio = w / h;
   let drawH, offsetY;
@@ -81,10 +91,22 @@ function getHudCanvasBottom(canvas, w, h, hudClientPx) {
     drawH = rect.width / canvasRatio;
     offsetY = (rect.height - drawH) / 2;
   }
-  const contentTopClient = rect.top + offsetY;
+  return { scale: drawH / h, contentTopClient: rect.top + offsetY };
+}
+
+// Canvas-space y where the DOM HUD overlay ends. The HUD sits at client top: 0;
+// in side layout the canvas reaches near the screen top so the HUD overlaps it.
+function getHudCanvasBottom(canvas, w, h, hudClientPx) {
+  const { scale, contentTopClient } = getCanvasContentGeom(canvas, w, h);
   const hudCoverClient = Math.max(0, hudClientPx - contentTopClient);
-  const scale = drawH / h;
   return scale > 0 ? hudCoverClient / scale : 0;
+}
+
+// Canvas-space gap that corresponds to a fixed screen-pixel gap above the canvas
+// bottom edge, so the bottom buttons keep a constant on-screen gap at any size.
+function getBottomGapCanvas(canvas, w, h, gapClientPx) {
+  const { scale } = getCanvasContentGeom(canvas, w, h);
+  return scale > 0 ? gapClientPx / scale : gapClientPx;
 }
 
 // Convert pointer client coordinates to canvas-internal coordinates,
@@ -122,6 +144,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [rotateRightActive, setRotateRightActive] = useState(false); // rotate right button pressed
   const [screenRatio, setScreenRatio] = useState(() => (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 4 / 3));
   const [hudBottomY, setHudBottomY] = useState(0); // canvas-space y where the DOM HUD ends
+  const [bottomGap, setBottomGap] = useState(BOTTOM_GAP_CLIENT_PX); // canvas-space gap above canvas bottom edge
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [tilesetLoaded, setTilesetLoaded] = useState(false);
@@ -185,6 +208,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       const canvas = canvasRef.current;
       if (canvas) {
         setHudBottomY(getHudCanvasBottom(canvas, width, height, HUD_CLIENT_PX));
+        setBottomGap(getBottomGapCanvas(canvas, width, height, BOTTOM_GAP_CLIENT_PX));
       }
     };
     onResize();
@@ -199,7 +223,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
 
     const getButtonAt = (clientX, clientY) => {
       const p = pointerToCanvas(canvas, clientX, clientY, width, height);
-      return getTouchButtonRects(width, height, screenRatio, hudBottomY).find(
+      return getTouchButtonRects(width, height, screenRatio, hudBottomY, bottomGap).find(
         (b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h
       );
     };
@@ -235,7 +259,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [width, height, screenRatio, hudBottomY]);
+  }, [width, height, screenRatio, hudBottomY, bottomGap]);
 
   useEffect(() => {
     const loadAssets = async () => {
@@ -1141,7 +1165,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       // Transparent buttons, highlight when active.
       // Render after screen shake restore to ensure they are in correct position.
       ctx.textAlign = 'center';
-      const touchButtons = getTouchButtonRects(width, height, screenRatio, hudBottomY);
+      const touchButtons = getTouchButtonRects(width, height, screenRatio, hudBottomY, bottomGap);
       for (const btn of touchButtons) {
         let active = false;
         switch (btn.type) {
