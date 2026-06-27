@@ -11,19 +11,56 @@ import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
 import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD } from '../core/constants.js';
 
-// Geometry of the tractor-beam touch button(s) in canvas-internal coordinates.
-// ratio > threshold -> two side buttons (left & right); otherwise one wide bottom button.
+// Geometry of all touch control buttons in canvas-internal coordinates.
+// Returns an array of button objects with type, position, size, label, and color.
 // Shared by both the renderer and the pointer hit-testing (DRY).
-function getTractorButtonRects(w, h, ratio) {
+function getTouchButtonRects(w, h, ratio) {
+  const margin = 10;
+  const btnSize = 50;
+  const buttons = [];
+
+  // POD (tractor beam) buttons
   if (ratio > TOUCH_BUTTON_RATIO_THRESHOLD) {
     const bw = 60, bh = 120, y = (h - bh) / 2;
-    return [
-      { x: 10, y, w: bw, h: bh, label: 'POD', font: '14px Arial' },
-      { x: w - bw - 10, y, w: bw, h: bh, label: 'POD', font: '14px Arial' },
-    ];
+    buttons.push(
+      { type: 'pod', x: 10, y, w: bw, h: bh, label: 'POD', font: '14px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)' },
+      { type: 'pod', x: w - bw - 10, y, w: bw, h: bh, label: 'POD', font: '14px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)' }
+    );
+  } else {
+    const bh = 60;
+    buttons.push(
+      { type: 'pod', x: margin, y: h - bh - margin, w: w - 2 * margin, h: bh, label: 'POD (Traktorstrahl)', font: '16px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)' }
+    );
   }
-  const bh = 60, margin = 10;
-  return [{ x: margin, y: h - bh - margin, w: w - 2 * margin, h: bh, label: 'POD (Traktorstrahl)', font: '16px Arial' }];
+
+  // Thrust buttons (bottom corners)
+  buttons.push(
+    { type: 'thrust', x: margin, y: h - btnSize - margin, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)' },
+    { type: 'thrust', x: w - btnSize - margin, y: h - btnSize - margin, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)' }
+  );
+
+  // Fire buttons
+  if (ratio > TOUCH_BUTTON_RATIO_THRESHOLD) {
+    // Side layout: fire buttons above thrust buttons
+    buttons.push(
+      { type: 'fire', x: margin, y: h - btnSize * 2 - margin * 2, w: btnSize, h: btnSize, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)' },
+      { type: 'fire', x: w - btnSize - margin, y: h - btnSize * 2 - margin * 2, w: btnSize, h: btnSize, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)' }
+    );
+  } else {
+    // Bottom layout: single fire button in top-right corner
+    buttons.push(
+      { type: 'fire', x: w - btnSize - margin, y: margin, w: btnSize, h: btnSize, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)' }
+    );
+  }
+
+  // Rotate buttons (top-left corner)
+  const rotateSize = 40;
+  buttons.push(
+    { type: 'rotateLeft', x: margin, y: margin, w: rotateSize, h: rotateSize, label: '←', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' },
+    { type: 'rotateRight', x: margin + rotateSize + 5, y: margin, w: rotateSize, h: rotateSize, label: '→', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' }
+  );
+
+  return buttons;
 }
 
 // Convert pointer client coordinates to canvas-internal coordinates,
@@ -55,6 +92,10 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [ship] = useState(() => new Ship(width / 2, height / 2));
   const [keys, setKeys] = useState({});
   const [touchActive, setTouchActive] = useState(false); // tractor-beam touch button pressed
+  const [thrustActive, setThrustActive] = useState(false); // thrust button pressed
+  const [fireActive, setFireActive] = useState(false); // fire button pressed
+  const [rotateLeftActive, setRotateLeftActive] = useState(false); // rotate left button pressed
+  const [rotateRightActive, setRotateRightActive] = useState(false); // rotate right button pressed
   const [screenRatio, setScreenRatio] = useState(() => (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 4 / 3));
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
@@ -118,25 +159,39 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Pointer handling for the on-screen tractor-beam button(s) (mouse + touch)
+  // Pointer handling for all on-screen touch buttons (mouse + touch)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const isInsideButton = (clientX, clientY) => {
+    const getButtonAt = (clientX, clientY) => {
       const p = pointerToCanvas(canvas, clientX, clientY, width, height);
-      return getTractorButtonRects(width, height, screenRatio).some(
+      return getTouchButtonRects(width, height, screenRatio).find(
         (b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h
       );
     };
 
     const handlePointerDown = (e) => {
-      if (isInsideButton(e.clientX, e.clientY)) {
+      const btn = getButtonAt(e.clientX, e.clientY);
+      if (btn) {
         e.preventDefault();
-        setTouchActive(true);
+        switch (btn.type) {
+          case 'pod': setTouchActive(true); break;
+          case 'thrust': setThrustActive(true); break;
+          case 'fire': setFireActive(true); break;
+          case 'rotateLeft': setRotateLeftActive(true); break;
+          case 'rotateRight': setRotateRightActive(true); break;
+        }
       }
     };
-    const handlePointerUp = () => setTouchActive(false);
+
+    const handlePointerUp = () => {
+      setTouchActive(false);
+      setThrustActive(false);
+      setFireActive(false);
+      setRotateLeftActive(false);
+      setRotateRightActive(false);
+    };
 
     canvas.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('pointerup', handlePointerUp);
@@ -411,13 +466,13 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
 
       // Handle input (skipped while the ship is exploding)
       if (!isDying) {
-        if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+        if (keys['ArrowLeft'] || keys['a'] || keys['A'] || rotateLeftActive) {
           ship.rotateLeft();
         }
-        if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+        if (keys['ArrowRight'] || keys['d'] || keys['D'] || rotateRightActive) {
           ship.rotateRight();
         }
-        if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+        if (keys['ArrowUp'] || keys['w'] || keys['W'] || thrustActive) {
           ship.setThrust(true);
           // Spawn thrust particles
           const thrustX = ship.x - Math.sin(ship.angle) * 15;
@@ -458,8 +513,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       // Player shooting (X key)
       setPlayerBullets(prev => {
         const newBullets = [...prev];
-        // Check if X is pressed and add cooldown logic
-        if (keys['x'] || keys['X']) {
+        // Check if X is pressed or fire button is active and add cooldown logic
+        if (keys['x'] || keys['X'] || fireActive) {
           // Simple cooldown: only shoot every ~10 frames
           const lastShotTime = newBullets.length > 0 ? newBullets[newBullets.length - 1].time : 0;
           if (performance.now() - lastShotTime > 150) { // 150ms cooldown
@@ -1051,16 +1106,22 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       // Render particles
       particleSystem.current.render(ctx, camera.x, camera.y);
 
-      // Draw touch tractor beam button(s) (inside canvas).
+      // Draw all touch control buttons (inside canvas).
       // Geometry comes from the shared helper so rendering and hit-testing stay in sync (DRY).
-      // Transparent buttons, highlight yellow when active.
-      const buttonColor = touchActive ? 'rgba(255, 255, 0, 0.5)' : 'rgba(255, 255, 0, 0.2)';
-      const borderColor = 'rgba(255, 255, 0, 0.5)';
+      // Transparent buttons, highlight when active.
       ctx.textAlign = 'center';
-      for (const btn of getTractorButtonRects(width, height, screenRatio)) {
-        ctx.fillStyle = buttonColor;
+      for (const btn of getTouchButtonRects(width, height, screenRatio)) {
+        let active = false;
+        switch (btn.type) {
+          case 'pod': active = touchActive; break;
+          case 'thrust': active = thrustActive; break;
+          case 'fire': active = fireActive; break;
+          case 'rotateLeft': active = rotateLeftActive; break;
+          case 'rotateRight': active = rotateRightActive; break;
+        }
+        ctx.fillStyle = active ? btn.activeColor : btn.color;
         ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
-        ctx.strokeStyle = borderColor;
+        ctx.strokeStyle = btn.activeColor;
         ctx.lineWidth = 2;
         ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
         ctx.fillStyle = '#fff';
