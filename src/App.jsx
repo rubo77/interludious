@@ -34,6 +34,7 @@ function App() {
     setGameState('playing');
     setLevel(levelNum);
     setFuel(100);
+    setGameSession(prev => prev + 1); // Force full GameCanvas reset
   };
 
   const handleLevelComplete = (completedLevel) => {
