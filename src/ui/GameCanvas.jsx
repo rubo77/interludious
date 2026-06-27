@@ -9,9 +9,9 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT } from '../core/constants.js';
 
-export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange, onLivesChange, level: levelProp, gravityMultiplier = 1.0, frozen = false }) {
+export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, onFuelChange, onLevelComplete, onGameOver, onScoreChange, onLivesChange, level: levelProp, gravityMultiplier = 1.0, frozen = false }) {
   const canvasRef = useRef(null);
   const [ship] = useState(() => new Ship(width / 2, height / 2));
   const [keys, setKeys] = useState({});
@@ -1010,7 +1010,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       ref={canvasRef}
       width={width}
       height={height}
-      style={{ border: '2px solid #333', backgroundColor: '#000' }}
+      style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', backgroundColor: '#000' }}
       tabIndex={0}
     />
   );
