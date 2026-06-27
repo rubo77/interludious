@@ -9,7 +9,10 @@ function App() {
   const [lives, setLives] = useState(3);
   const [level, setLevel] = useState(1);
   const [fuel, setFuel] = useState(100);
-  const [completedLevels, setCompletedLevels] = useState(new Set());
+  const [completedLevels, setCompletedLevels] = useState(() => {
+    const stored = localStorage.getItem('thrust_completedLevels');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [gravityMultiplier, setGravityMultiplier] = useState(1.0);
   const [gameSession, setGameSession] = useState(0); // Increments on each new game to force GameCanvas remount
@@ -58,6 +61,11 @@ function App() {
   const handleLivesChange = (newLives) => {
     setLives(newLives);
   };
+
+  // Persist completedLevels to localStorage
+  useEffect(() => {
+    localStorage.setItem('thrust_completedLevels', JSON.stringify([...completedLevels]));
+  }, [completedLevels]);
 
   // Keyboard shortcuts for game over and level complete screens
   useEffect(() => {
