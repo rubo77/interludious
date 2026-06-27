@@ -30,7 +30,7 @@ export default function Menu({ onStart, levelButtons, onBackToMenu, appVersion }
       {/* Hamburger menu button */}
       <button
         onClick={() => setShowMobileMenu(!showMobileMenu)}
-        style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px', zIndex: 10 }}
+        style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px', zIndex: 1001 }}
       >
         ☰
       </button>

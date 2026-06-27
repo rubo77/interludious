@@ -166,6 +166,14 @@ function App() {
 
       {(gameState === 'playing' || gameState === 'gameover' || gameState === 'levelcomplete') && (
         <>
+          {/* Hamburger button - outside all containers with position fixed */}
+          <button
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            style={{ position: 'fixed', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px', zIndex: 1001 }}
+          >
+            ☰
+          </button>
+
           {/* HUD overlay on top */}
           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(0, 0, 0, 0.8)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', zIndex: 10 }}>
             <div style={{ display: 'flex', flexDirection: 'row', gap: '16px', fontSize: '12px', color: '#fff', alignItems: 'center' }}>
@@ -174,12 +182,6 @@ function App() {
               <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LEVEL{level}</span>
               <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>FUEL</span>
             </div>
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              style={{ background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px' }}
-            >
-              ☰
-            </button>
           </div>
 
           {/* Canvas wrapper for scaled canvas and centered overlays */}

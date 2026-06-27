@@ -4,7 +4,7 @@ export default function HamburgerMenu({ isOpen, onClose, levelButtons, onBackToM
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: 'absolute', top: '50px', right: '0', width: '250px', background: 'rgba(20, 20, 20, 0.95)', backdropFilter: 'blur(10px)', borderLeft: '1px solid rgba(255, 255, 255, 0.1)', padding: '20px', zIndex: 100 }}>
+    <div style={{ position: 'absolute', top: '50px', right: '0', width: '250px', background: 'rgba(20, 20, 20, 0.95)', backdropFilter: 'blur(10px)', borderLeft: '1px solid rgba(255, 255, 255, 0.1)', padding: '20px', zIndex: 2000 }}>
       <button
         onClick={onClose}
         style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' }}
