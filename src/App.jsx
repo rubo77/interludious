@@ -71,14 +71,17 @@ function App() {
   }, [completedLevels]);
 
   // Generate level buttons (DRY: used by hamburger menu)
-  const generateLevelButtons = () => {
+  const generateLevelButtons = (onClose) => {
     const buttons = [];
     for (let i = 1; i <= 6; i++) {
       const isUnlocked = i === 1 || completedLevels.has(i - 1) || completedLevels.has(i);
       buttons.push(
         <button
           key={i}
-          onClick={() => handleStartLevel(i)}
+          onClick={() => {
+            handleStartLevel(i);
+            if (onClose) onClose();
+          }}
           disabled={!isUnlocked}
           style={{
             padding: '12px 16px',
@@ -231,7 +234,7 @@ function App() {
           <HamburgerMenu
             isOpen={showMobileMenu}
             onClose={() => setShowMobileMenu(false)}
-            levelButtons={generateLevelButtons()}
+            levelButtons={generateLevelButtons(() => setShowMobileMenu(false))}
             onBackToMenu={() => { setGameState('menu'); setShowMobileMenu(false); }}
             appVersion={APP_VERSION}
           />
