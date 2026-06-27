@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Menu from './ui/Menu';
 import HUD from './ui/HUD';
 import GameCanvas from './ui/GameCanvas';
+import OverlayMessage from './ui/OverlayMessage';
 
 function App() {
   const [gameState, setGameState] = useState('playing'); // Start directly in playing mode
@@ -34,9 +35,12 @@ function App() {
   const handleLevelComplete = (completedLevel) => {
     setScore(prev => prev + 100);
     setCompletedLevels(prev => new Set([...prev, completedLevel]));
-    
+    setGameState('levelcomplete');
+  };
+
+  const handleNextLevel = () => {
     // If last level (6) completed, restart from level 1 with stronger gravity
-    if (completedLevel >= 6) {
+    if (level >= 6) {
       setLevel(1);
       setGravityMultiplier(prev => prev + 0.2); // Increase gravity by 20%
     } else {
@@ -169,7 +173,7 @@ function App() {
                   onLivesChange={handleLivesChange}
                   level={level}
                   gravityMultiplier={gravityMultiplier}
-                  frozen={gameState === 'gameover'}
+                  frozen={gameState === 'gameover' || gameState === 'levelcomplete'}
                 />
               </div>
 
@@ -222,7 +226,7 @@ function App() {
                   onLivesChange={handleLivesChange}
                   level={level}
                   gravityMultiplier={gravityMultiplier}
-                  frozen={gameState === 'gameover'}
+                  frozen={gameState === 'gameover' || gameState === 'levelcomplete'}
                 />
                 <button onClick={() => setGameState('menu')} style={{ padding: '10px 20px', cursor: 'pointer' }}>
                   Back to Menu
@@ -268,20 +272,33 @@ function App() {
 
       {/* Game over overlay - shown on top of frozen canvas */}
       {gameState === 'gameover' && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0, 0, 0, 0.8)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '40px', background: 'linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(20, 20, 20, 0.98))', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 40px rgba(0, 0, 0, 0.6)' }}>
-            <h1 style={{ margin: '0 0 10px 0', color: '#ff4444', fontWeight: '800', fontSize: '48px', letterSpacing: '-2px' }}>GAME OVER</h1>
-            <p style={{ margin: '0 0 30px 0', color: '#888', fontSize: '16px' }}>Final Score: <span style={{ color: '#00ff88', fontWeight: '700', fontSize: '24px', fontFamily: 'monospace' }}>{score}</span></p>
-            <div style={{ display: 'flex', gap: '15px' }}>
+        <OverlayMessage
+          title="GAME OVER"
+          message={`Final Score: ${score}`}
+          buttons={
+            <>
               <button onClick={handleStartGame} style={{ padding: '16px 32px', fontSize: '16px', fontWeight: '600', color: '#fff', background: 'linear-gradient(135deg, #00ff88, #00cc66)', border: 'none', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0, 255, 136, 0.3)' }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 6px 30px rgba(0, 255, 136, 0.5)'; }} onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 20px rgba(0, 255, 136, 0.3)'; }}>
                 Play Again
               </button>
               <button onClick={() => setGameState('menu')} style={{ padding: '16px 32px', fontSize: '16px', fontWeight: '600', color: '#fff', background: 'linear-gradient(135deg, #444, #555)', border: 'none', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; }}>
                 Back to Menu
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        />
+      )}
+
+      {/* Level complete overlay - shown on top of frozen canvas */}
+      {gameState === 'levelcomplete' && (
+        <OverlayMessage
+          title="LEVEL COMPLETE"
+          message={`Score: ${score}`}
+          buttons={
+            <button onClick={handleNextLevel} style={{ padding: '16px 32px', fontSize: '16px', fontWeight: '600', color: '#fff', background: 'linear-gradient(135deg, #00ff88, #00cc66)', border: 'none', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0, 255, 136, 0.3)' }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 6px 30px rgba(0, 255, 136, 0.5)'; }} onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 20px rgba(0, 255, 136, 0.3)'; }}>
+              Next Level
+            </button>
+          }
+        />
       )}
     </div>
   );
