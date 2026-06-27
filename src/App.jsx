@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Menu from './ui/Menu';
-import HUD from './ui/HUD';
 import GameCanvas from './ui/GameCanvas';
 import OverlayMessage from './ui/OverlayMessage';
 
@@ -11,11 +10,9 @@ function App() {
   const [level, setLevel] = useState(1);
   const [fuel, setFuel] = useState(100);
   const [completedLevels, setCompletedLevels] = useState(new Set());
-  const [isMobile, setIsMobile] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [gravityMultiplier, setGravityMultiplier] = useState(1.0);
   const [gameSession, setGameSession] = useState(0); // Increments on each new game to force GameCanvas remount
-  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
 
   const handleStartGame = () => {
     setGameState('playing');
@@ -61,31 +58,6 @@ function App() {
   const handleLivesChange = (newLives) => {
     setLives(newLives);
   };
-
-  // Mobile detection and canvas resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
-    };
-    checkMobile();
-
-    const resizeCanvas = () => {
-      // Canvas max size equals browser inner screen
-      const maxWidth = window.innerWidth;
-      const maxHeight = window.innerHeight;
-      setCanvasSize({ width: maxWidth, height: maxHeight });
-    };
-    resizeCanvas();
-
-    window.addEventListener('resize', () => {
-      checkMobile();
-      resizeCanvas();
-    });
-    return () => {
-      window.removeEventListener('resize', checkMobile);
-      window.removeEventListener('resize', resizeCanvas);
-    };
-  }, []);
 
   // Keyboard shortcuts for game over and level complete screens
   useEffect(() => {
@@ -155,171 +127,110 @@ function App() {
   }
 
   return (
-    <div className="app" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '100vh', backgroundColor: '#000', color: '#fff' }}>
+    <div className="app" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100vw', height: '100vh', backgroundColor: '#000', color: '#fff', position: 'relative' }}>
       {gameState === 'menu' && (
         <Menu onStart={handleStartGame} />
       )}
-      
-      {(gameState === 'playing' || gameState === 'gameover') && (
+
+      {(gameState === 'playing' || gameState === 'gameover' || gameState === 'levelcomplete') && (
         <>
-          {isMobile ? (
-            // Mobile layout: HUD bar on top, fullscreen canvas, hamburger menu
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', position: 'relative' }}>
-              {/* HUD bar on top */}
-              <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(0, 0, 0, 0.8)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                <div style={{ display: 'flex', flexDirection: 'row', gap: '16px', fontSize: '12px', color: '#fff', alignItems: 'center' }}>
-                  <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>SCORE{score}</span>
-                  <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LIVES{'❤️'.repeat(lives)}</span>
-                  <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LEVEL{level}</span>
-                  <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>FUEL</span>
-                </div>
-                <button 
-                  onClick={() => setShowMobileMenu(!showMobileMenu)}
-                  style={{ background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px' }}
-                >
-                  ☰
-                </button>
-              </div>
+          {/* HUD overlay on top */}
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(0, 0, 0, 0.8)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', zIndex: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '16px', fontSize: '12px', color: '#fff', alignItems: 'center' }}>
+              <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>SCORE{score}</span>
+              <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LIVES{'❤️'.repeat(lives)}</span>
+              <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LEVEL{level}</span>
+              <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>FUEL</span>
+            </div>
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              style={{ background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px' }}
+            >
+              ☰
+            </button>
+          </div>
 
-              {/* Fullscreen canvas */}
-              <div style={{ flex: 1, position: 'relative' }}>
-                <GameCanvas 
-                  key={`mobile-${gameSession}`}
-                  width={window.innerWidth}
-                  height={window.innerHeight - 50}
-                  onFuelChange={setFuel} 
-                  onLevelComplete={handleLevelComplete}
-                  onGameOver={handleGameOver}
-                  onScoreChange={handleScoreChange}
-                  onLivesChange={handleLivesChange}
-                  level={level}
-                  gravityMultiplier={gravityMultiplier}
-                  frozen={gameState === 'gameover' || gameState === 'levelcomplete'}
+          {/* Canvas wrapper for scaled canvas and centered overlays */}
+          <div style={{ flex: 1, width: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
+            <div style={{ position: 'relative', width: '100%', height: '100%', maxWidth: '100%', maxHeight: '100%' }}>
+              <GameCanvas
+                key={`game-${gameSession}`}
+                onFuelChange={setFuel}
+                onLevelComplete={handleLevelComplete}
+                onGameOver={handleGameOver}
+                onScoreChange={handleScoreChange}
+                onLivesChange={handleLivesChange}
+                level={level}
+                gravityMultiplier={gravityMultiplier}
+                frozen={gameState === 'gameover' || gameState === 'levelcomplete'}
+              />
+
+              {/* Game over overlay - centered over canvas */}
+              {gameState === 'gameover' && (
+                <OverlayMessage
+                  title="GAME OVER"
+                  message={`Final Score: ${score}`}
+                  buttons={
+                    <>
+                      <button onClick={handleStartGame} style={{ padding: '16px 32px', fontSize: '16px', fontWeight: '600', color: '#fff', background: 'linear-gradient(135deg, #00ff88, #00cc66)', border: 'none', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0, 255, 136, 0.3)' }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 6px 30px rgba(0, 255, 136, 0.5)'; }} onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 20px rgba(0, 255, 136, 0.3)'; }}>
+                        Play Again
+                      </button>
+                      <button onClick={() => setGameState('menu')} style={{ padding: '16px 32px', fontSize: '16px', fontWeight: '600', color: '#fff', background: 'linear-gradient(135deg, #444, #555)', border: 'none', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; }}>
+                        Back to Menu
+                      </button>
+                    </>
+                  }
                 />
-              </div>
+              )}
 
-              {/* Mobile menu overlay */}
-              {showMobileMenu && (
-                <div style={{ position: 'absolute', top: '50px', right: '0', width: '250px', background: 'rgba(20, 20, 20, 0.95)', backdropFilter: 'blur(10px)', borderLeft: '1px solid rgba(255, 255, 255, 0.1)', padding: '20px', zIndex: 100 }}>
-                  <button 
-                    onClick={() => setShowMobileMenu(false)}
-                    style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' }}
-                  >
-                    ✕
-                  </button>
-                  
-                  <h3 style={{ margin: '0 0 15px 0', color: '#fff', fontWeight: '600', fontSize: '14px' }}>SELECT LEVEL</h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
-                    {levelButtons}
-                  </div>
-                  
-                  <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontWeight: '600', fontSize: '14px' }}>CONTROLS</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: '#aaa', marginBottom: '20px' }}>
-                    <div><span style={{ color: '#fff' }}>↑ / W</span> - Thrust</div>
-                    <div><span style={{ color: '#fff' }}>← / A</span> - Rotate Left</div>
-                    <div><span style={{ color: '#fff' }}>→ / D</span> - Rotate Right</div>
-                    <div><span style={{ color: '#fff' }}>Space</span> - Tractor Beam</div>
-                    <div><span style={{ color: '#fff' }}>X</span> - Shoot</div>
-                  </div>
-                  
-                  <button 
-                    onClick={() => { setGameState('menu'); setShowMobileMenu(false); }}
-                    style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #444, #555)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
-                  >
-                    Back to Menu
-                  </button>
-                </div>
+              {/* Level complete overlay - centered over canvas */}
+              {gameState === 'levelcomplete' && (
+                <OverlayMessage
+                  title="LEVEL COMPLETE"
+                  message={`Score: ${score}`}
+                  buttons={
+                    <button onClick={handleNextLevel} style={{ padding: '16px 32px', fontSize: '16px', fontWeight: '600', color: '#fff', background: 'linear-gradient(135deg, #00ff88, #00cc66)', border: 'none', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0, 255, 136, 0.3)' }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 6px 30px rgba(0, 255, 136, 0.5)'; }} onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 20px rgba(0, 255, 136, 0.3)'; }}>
+                      Next Level
+                    </button>
+                  }
+                />
               )}
             </div>
-          ) : (
-            // Desktop layout
-            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '20px', padding: '20px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-                <HUD score={score} lives={lives} level={level} fuel={fuel} />
-                <GameCanvas 
-                  key={`desktop-${gameSession}`}
-                  width={800} 
-                  height={600} 
-                  onFuelChange={setFuel} 
-                  onLevelComplete={handleLevelComplete}
-                  onGameOver={handleGameOver}
-                  onScoreChange={handleScoreChange}
-                  onLivesChange={handleLivesChange}
-                  level={level}
-                  gravityMultiplier={gravityMultiplier}
-                  frozen={gameState === 'gameover' || gameState === 'levelcomplete'}
-                />
-                <button onClick={() => setGameState('menu')} style={{ padding: '10px 20px', cursor: 'pointer' }}>
-                  Back to Menu
-                </button>
+          </div>
+
+          {/* Menu overlay for level selection and controls */}
+          {showMobileMenu && (
+            <div style={{ position: 'absolute', top: '50px', right: '0', width: '250px', background: 'rgba(20, 20, 20, 0.95)', backdropFilter: 'blur(10px)', borderLeft: '1px solid rgba(255, 255, 255, 0.1)', padding: '20px', zIndex: 100 }}>
+              <button
+                onClick={() => setShowMobileMenu(false)}
+                style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+
+              <h3 style={{ margin: '0 0 15px 0', color: '#fff', fontWeight: '600', fontSize: '14px' }}>SELECT LEVEL</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+                {levelButtons}
               </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '20px', background: 'linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.95))', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(10px)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)' }}>
-                <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontWeight: '600', fontSize: '14px', letterSpacing: '1px', color: '#888' }}>SELECT LEVEL</h3>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
-                  {levelButtons}
-                </div>
-                
-                <div style={{ marginTop: '20px' }}>
-                  <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontWeight: '600', fontSize: '14px', letterSpacing: '1px', color: '#888' }}>CONTROLS</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#aaa' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                      <span>↑ / W</span>
-                      <span>Thrust</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                      <span>← / A</span>
-                      <span>Rotate Left</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                      <span>→ / D</span>
-                      <span>Rotate Right</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                      <span>Space</span>
-                      <span>Tractor Beam / Pod</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-                      <span>X</span>
-                      <span>Shoot</span>
-                    </div>
-                  </div>
-                </div>
+
+              <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontWeight: '600', fontSize: '14px' }}>CONTROLS</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: '#aaa', marginBottom: '20px' }}>
+                <div><span style={{ color: '#fff' }}>↑ / W</span> - Thrust</div>
+                <div><span style={{ color: '#fff' }}>← / A</span> - Rotate Left</div>
+                <div><span style={{ color: '#fff' }}>→ / D</span> - Rotate Right</div>
+                <div><span style={{ color: '#fff' }}>Space</span> - Tractor Beam</div>
+                <div><span style={{ color: '#fff' }}>X</span> - Shoot</div>
               </div>
+
+              <button
+                onClick={() => { setGameState('menu'); setShowMobileMenu(false); }}
+                style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #444, #555)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
+              >
+                Back to Menu
+              </button>
             </div>
           )}
         </>
-      )}
-
-      {/* Game over overlay - shown on top of frozen canvas */}
-      {gameState === 'gameover' && (
-        <OverlayMessage
-          title="GAME OVER"
-          message={`Final Score: ${score}`}
-          buttons={
-            <>
-              <button onClick={handleStartGame} style={{ padding: '16px 32px', fontSize: '16px', fontWeight: '600', color: '#fff', background: 'linear-gradient(135deg, #00ff88, #00cc66)', border: 'none', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0, 255, 136, 0.3)' }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 6px 30px rgba(0, 255, 136, 0.5)'; }} onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 20px rgba(0, 255, 136, 0.3)'; }}>
-                Play Again
-              </button>
-              <button onClick={() => setGameState('menu')} style={{ padding: '16px 32px', fontSize: '16px', fontWeight: '600', color: '#fff', background: 'linear-gradient(135deg, #444, #555)', border: 'none', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.3s ease' }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; }}>
-                Back to Menu
-              </button>
-            </>
-          }
-        />
-      )}
-
-      {/* Level complete overlay - shown on top of frozen canvas */}
-      {gameState === 'levelcomplete' && (
-        <OverlayMessage
-          title="LEVEL COMPLETE"
-          message={`Score: ${score}`}
-          buttons={
-            <button onClick={handleNextLevel} style={{ padding: '16px 32px', fontSize: '16px', fontWeight: '600', color: '#fff', background: 'linear-gradient(135deg, #00ff88, #00cc66)', border: 'none', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0, 255, 136, 0.3)' }} onMouseEnter={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 6px 30px rgba(0, 255, 136, 0.5)'; }} onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 20px rgba(0, 255, 136, 0.3)'; }}>
-              Next Level
-            </button>
-          }
-        />
       )}
     </div>
   );
