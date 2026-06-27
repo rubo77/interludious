@@ -10,6 +10,10 @@ export const FUEL_CONSUMPTION = 0.1;
 export const SKY_THRESHOLD_OFFSET = 400; // pixels above level top (y=0) to trigger sky event
 export const GAME_SPEED = 0.5; // Global game speed multiplier (1.0 = full speed, 0.5 = half speed)
 
+// Canvas internal resolution (fixed aspect ratio 4:3)
+export const GAME_WIDTH = 800;
+export const GAME_HEIGHT = 600;
+
 // Pod physics
 export const POD_MASS_FACTOR = 2; // Pod is 2x heavier than the ship (affects tow physics / center of mass)
 export const POD_GRAVITY = 0.055; // Gravity applied to the pod when free-falling (off the holder)

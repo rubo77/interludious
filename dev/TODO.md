@@ -12,3 +12,4 @@
 - [ ] man muss mit dem podhalter kollidieren können, auch der pod muss damit kollidieren können
 - [ ] die raketentürme sollen mit einem schuss vernichthbar sein
 - [ ] es kommt vor, dass die rakententürme nicht mehr zerstörbar sined, wahrschinlich wenn man rechts aus dem bild geflogen ist und auf der anderen seite wieder eingeflogen ist
+- [ ] die level auswahl darf nut die levels auswählen, die man schon freigespilet hat, dies soll in der session gespeichert werden, die nie abläuft
