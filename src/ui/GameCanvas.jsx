@@ -177,18 +177,31 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         setButtons(buttonPositions.map(bp => new Button(bp.x, bp.y, bp.type)));
         setSliders(sliderPositions.map(sp => new Slider(sp.x, sp.y, sp.type, 'horizontal')));
 
-        // Generate stars for the sky - spread across entire level height
-        const starCount = 300;
+        // Generate stars in the SKY (the region ABOVE the level, i.e. negative y).
+        // Density ramps from 0 starting 100px above the ship spawn up to full
+        // density at SKY_THRESHOLD_OFFSET. Random positions, brightness, flicker.
         const newStars = [];
-        const levelHeight = layout.length * 16;
-        for (let i = 0; i < starCount; i++) {
-          newStars.push({
-            x: Math.random() * lenx * 16,
-            y: Math.random() * levelHeight,
-            size: Math.random() * 2 + 0.5,
-            flickerSpeed: Math.random() * 0.1 + 0.05,
-            flickerOffset: Math.random() * Math.PI * 2
-          });
+        if (restartPos) {
+          const levelWidthPx = lenx * 16;
+          const shipStartY = restartPos.y;
+          const yDensityStart = shipStartY - 100;        // density 0 boundary (lower edge of sky)
+          const yFullDensity = -SKY_THRESHOLD_OFFSET;    // full density boundary (higher in the sky)
+          const yTop = yFullDensity - 400;               // generate a bit beyond full-density edge
+          const candidateCount = 1200;
+          for (let i = 0; i < candidateCount; i++) {
+            const y = yDensityStart - Math.random() * (yDensityStart - yTop);
+            // Density factor: 0 at yDensityStart, 1 at/above yFullDensity
+            const density = Math.max(0, Math.min(1, (yDensityStart - y) / (yDensityStart - yFullDensity)));
+            if (Math.random() > density) continue; // keep star with probability = density
+            newStars.push({
+              x: Math.random() * levelWidthPx,
+              y,
+              size: Math.random() * 1.5 + 0.5,
+              brightness: Math.random() * 0.6 + 0.4, // 0.4 - 1.0 base brightness
+              flickerSpeed: Math.random() * 0.004 + 0.001,
+              flickerOffset: Math.random() * Math.PI * 2
+            });
+          }
         }
         setStars(newStars);
       } catch (error) {
@@ -230,6 +243,31 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
+    // Reset ship and pod back to their level-start state (DRY helper used by every respawn site)
+    const respawnShipAndPod = () => {
+      if (restartPosition) {
+        ship.setPosition(restartPosition.x, restartPosition.y);
+        ship.setVelocity(0, 0);
+        ship.fuel = 100;
+      }
+      // Put the pod safely back on its holder (recreate it if it had exploded)
+      if (podStartPosition) {
+        if (!pod || !pod.active) {
+          setPod(new Pod(podStartPosition.x, podStartPosition.y));
+        } else {
+          pod.setPosition(podStartPosition.x, podStartPosition.y);
+          pod.vx = 0;
+          pod.vy = 0;
+          pod.towed = false;
+          pod.onHolder = true;
+          pod.active = true;
+        }
+      }
+      setPodExploded(false);
+      setPodExplosionTime(null);
+      shipDestroyed.current = false;
+    };
+
     // Destroy the ship: start ~1s explosion animation, then game over or respawn (DRY helper)
     const destroyShip = () => {
       if (shipDestroyed.current) return;
@@ -254,19 +292,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
           setGameState('gameover');
           if (onGameOver) onGameOver(score);
         } else {
-          // Respawn at restart point
-          if (restartPosition) {
-            ship.setPosition(restartPosition.x, restartPosition.y);
-            ship.setVelocity(0, 0);
-            ship.fuel = 100;
-          }
-          if (pod && podPosition) {
-            pod.setPosition(podPosition.x, podPosition.y);
-            pod.vx = 0;
-            pod.vy = 0;
-          }
-          // Allow ship to be destroyed again after respawn
-          shipDestroyed.current = false;
+          // Respawn at restart point with the pod back on its holder
+          respawnShipAndPod();
         }
         return newLives;
       });
@@ -393,43 +420,42 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       }
 
       // Update pod
-      if (pod) {
+      if (pod && pod.active) {
+        // Tractor beam grabs the pod once the ship is close enough.
+        // Grabbing the pod permanently takes it off the holder; while the beam
+        // stays active the pod remains towed (the tether keeps them together).
         if (tractorBeamActive) {
-          // Check if close enough to tow
-          const distance = Math.sqrt((ship.x - pod.x) ** 2 + (ship.y - pod.y) ** 2);
-          if (distance < 50) {
-            pod.setTowing(true);
-            const towPos = pod.getTowPosition(ship, ship.angle);
-            pod.moveToTowPosition(towPos.x, towPos.y, 0.15);
+          if (pod.onHolder) {
+            const distance = Math.sqrt((ship.x - pod.x) ** 2 + (ship.y - pod.y) ** 2);
+            if (distance < 50) {
+              pod.onHolder = false; // [POD_HOLDER] leaving the holder for good
+              pod.towed = true;
+            }
           } else {
-            pod.setTowing(false);
+            pod.towed = true;
           }
         } else {
-          pod.setTowing(false);
+          pod.towed = false;
         }
-        
-        // Check if pod has moved from start position
-        const hasMoved = podStartPosition && 
-          (Math.abs(pod.x - podStartPosition.x) > 5 || Math.abs(pod.y - podStartPosition.y) > 5);
-        
-        // Disable gravity while pod is on start holder
-        if (!hasMoved) {
-          pod.vy = 0;
-          pod.vx = 0;
+
+        // Apply physically-correct tow tether forces (affects both ship and pod)
+        if (pod.towed) {
+          pod.applyTether(ship, deltaTime);
         }
-        
-        // Check pod collision with walls/obstacles (only after moving)
-        if (!podExploded && gameState === 'playing' && hasMoved) {
+
+        // Pod collision with walls/obstacles: only when off the holder.
+        // On the holder the pod is completely safe.
+        if (!podExploded && gameState === 'playing' && !pod.onHolder) {
           const podCollision = collision.current.checkPodCollision(pod, level);
           if (podCollision.collided) {
-            // Pod explodes first
+            // Pod explodes first, ship follows 0.5s later (see explosion timer above)
             setPodExploded(true);
             setPodExplosionTime(performance.now());
             particleSystem.current.spawnExplosion(pod.x, pod.y, 40, '#00ff00');
-            setPod(null); // Remove pod from game
+            pod.active = false;
           }
         }
-        
+
         pod.update(deltaTime);
 
         // Win condition: pod delivered to restart point
@@ -497,6 +523,19 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
             // Update position
             bullet.x += bullet.vx * deltaTime;
             bullet.y += bullet.vy * deltaTime;
+
+            // Only the ship's own shots can destroy the pod - watch out!
+            if (pod && pod.active && !podExploded) {
+              const pdx = bullet.x - pod.x;
+              const pdy = bullet.y - pod.y;
+              if (Math.sqrt(pdx * pdx + pdy * pdy) < 12) {
+                setPodExploded(true);
+                setPodExplosionTime(performance.now());
+                particleSystem.current.spawnExplosion(pod.x, pod.y, 40, '#00ff00');
+                pod.active = false;
+                return false; // Remove bullet
+              }
+            }
 
             // Check collision with bunkers
             let bulletHit = false;
@@ -591,17 +630,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
             setGameState('gameover');
             if (onGameOver) onGameOver(score);
           } else {
-            // Respawn at restart point
-            if (restartPosition) {
-              ship.setPosition(restartPosition.x, restartPosition.y);
-              ship.setVelocity(0, 0);
-              ship.fuel = 100;
-            }
-            if (pod && podPosition) {
-              pod.setPosition(podPosition.x, podPosition.y);
-              pod.vx = 0;
-              pod.vy = 0;
-            }
+            // Respawn at restart point with the pod back on its holder
+            respawnShipAndPod();
           }
           return newLives;
         });
@@ -670,24 +700,16 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
               if (onLevelComplete) onLevelComplete(currentLevel);
             }
           } else {
-            // Flying into sky without pod = reset game
+            // Flying into sky without pod = lose a life and respawn
             setLives(prev => {
               const newLives = prev - 1;
               if (onLivesChange) onLivesChange(newLives);
               if (newLives <= 0) {
+                setGameState('gameover');
                 if (onGameOver) onGameOver(score);
               } else {
-                // Respawn at restart point
-                if (restartPosition) {
-                  ship.setPosition(restartPosition.x, restartPosition.y);
-                  ship.setVelocity(0, 0);
-                  ship.fuel = 100;
-                }
-                if (pod && podPosition) {
-                  pod.setPosition(podPosition.x, podPosition.y);
-                  pod.vx = 0;
-                  pod.vy = 0;
-                }
+                // Respawn at restart point with the pod back on its holder
+                respawnShipAndPod();
               }
               return newLives;
             });
@@ -714,8 +736,9 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       if (level && tilesetLoaded && stars.length > 0) {
         const time = performance.now();
         stars.forEach(star => {
-          const flicker = 0.5 + 0.5 * Math.sin(time * star.flickerSpeed + star.flickerOffset);
-          const alpha = 0.5 + 0.5 * flicker;
+          // Slight flicker around the star's base brightness
+          const flicker = 0.85 + 0.15 * Math.sin(time * star.flickerSpeed + star.flickerOffset);
+          const alpha = Math.max(0, Math.min(1, star.brightness * flicker));
           ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
           ctx.beginPath();
           ctx.arc(star.x - camera.x, star.y - camera.y, star.size, 0, Math.PI * 2);
@@ -860,7 +883,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
       });
 
       // Draw pod with camera offset
-      if (pod) {
+      if (pod && pod.active) {
         ctx.save();
         ctx.translate(pod.x - camera.x, pod.y - camera.y);
         

@@ -1,4 +1,6 @@
 // Pod - The fuel canister that the ship must tow to the restart point
+import { POD_MASS_FACTOR, POD_GRAVITY, POD_TETHER_LENGTH, POD_TETHER_STIFFNESS, POD_TETHER_DAMPING } from '../core/constants.js';
+
 export class Pod {
   constructor(x, y) {
     this.x = x;
@@ -7,15 +9,24 @@ export class Pod {
     this.vy = 0;
     this.towed = false;
     this.active = true;
-    this.towingDistance = 30;
+    this.onHolder = true; // Pod sits safely on its holder: no gravity, immune to enemy fire
+    this.mass = POD_MASS_FACTOR; // Pod is much heavier than the ship
+    this.towingDistance = POD_TETHER_LENGTH;
   }
 
-  update(dt, gravity = 0.05) {
+  update(dt, gravity = POD_GRAVITY) {
     if (!this.active) return;
-    
-    if (!this.towed) {
-      this.vy += gravity * dt;
+
+    // While on the holder the pod is locked in place (no gravity, no drift)
+    if (this.onHolder) {
+      this.vx = 0;
+      this.vy = 0;
+      return;
     }
+
+    // Gravity always applies once the pod has left the holder (towed or free-falling).
+    // The tow tether forces are applied separately (see applyTether) before this update.
+    this.vy += gravity * dt;
 
     this.vx *= Math.pow(0.99, dt);
     this.vy *= Math.pow(0.99, dt);
@@ -29,9 +40,34 @@ export class Pod {
     this.y = y;
   }
 
-  setTowing(towing) {
-    this.towed = towing;
-    // Don't reset velocity when releasing - let gravity take over
+  // Physically-correct tow: a spring-damper tether connects ship and pod.
+  // Forces are applied to BOTH bodies scaled by their mass, so the combined
+  // system swings around its center of mass (which sits closer to the heavier pod).
+  applyTether(ship, dt) {
+    const dx = this.x - ship.x;
+    const dy = this.y - ship.y;
+    const dist = Math.hypot(dx, dy) || 0.0001;
+    const nx = dx / dist;
+    const ny = dy / dist;
+
+    // Spring force proportional to how far the tether is stretched/compressed
+    const stretch = dist - POD_TETHER_LENGTH;
+    let fx = -nx * stretch * POD_TETHER_STIFFNESS;
+    let fy = -ny * stretch * POD_TETHER_STIFFNESS;
+
+    // Damping along the tether using relative velocity
+    const rvx = this.vx - ship.vx;
+    const rvy = this.vy - ship.vy;
+    const relAlong = rvx * nx + rvy * ny;
+    fx -= nx * relAlong * POD_TETHER_DAMPING;
+    fy -= ny * relAlong * POD_TETHER_DAMPING;
+
+    // Apply acceleration = force / mass. Pod is heavier -> moves less for the same force.
+    this.vx += (fx / this.mass) * dt;
+    this.vy += (fy / this.mass) * dt;
+    // Reaction force on the ship (ship mass = 1)
+    ship.vx -= fx * dt;
+    ship.vy -= fy * dt;
   }
 
   getTowPosition(ship, angle) {
