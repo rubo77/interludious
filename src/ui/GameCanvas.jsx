@@ -19,6 +19,9 @@ function getTouchButtonRects(w, h, ratio) {
   const btnSize = 50;
   const buttons = [];
 
+  // HUD height is proportional to canvas height (8% of canvas height)
+  const hudHeight = h * 0.08;
+
   // POD (tractor beam) buttons
   if (ratio > TOUCH_BUTTON_RATIO_THRESHOLD) {
     const bw = 60, bh = 120, y = (h - bh) / 2;
@@ -42,16 +45,15 @@ function getTouchButtonRects(w, h, ratio) {
   );
 
   // Fire button (always top-right, below HUD)
-  const hudHeight = 60;
   buttons.push(
     { type: 'fire', x: w - btnSize - margin, y: hudHeight + margin, w: btnSize, h: btnSize, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)' }
   );
 
-  // Rotate buttons (top-left corner)
+  // Rotate buttons (top-left corner, below HUD)
   const rotateSize = 40;
   buttons.push(
-    { type: 'rotateLeft', x: margin, y: margin, w: rotateSize, h: rotateSize, label: '←', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' },
-    { type: 'rotateRight', x: margin + rotateSize + 5, y: margin, w: rotateSize, h: rotateSize, label: '→', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' }
+    { type: 'rotateLeft', x: margin, y: hudHeight + margin, w: rotateSize, h: rotateSize, label: '←', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' },
+    { type: 'rotateRight', x: margin + rotateSize + 5, y: hudHeight + margin, w: rotateSize, h: rotateSize, label: '→', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' }
   );
 
   return buttons;
