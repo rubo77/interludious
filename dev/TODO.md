@@ -13,4 +13,4 @@
 - [ ] die raketentürme sollen mit einem schuss vernichthbar sein
 - [ ] es kommt vor, dass die rakententürme nicht mehr zerstörbar sined, wahrschinlich wenn man rechts aus dem bild geflogen ist und auf der anderen seite wieder eingeflogen ist
 - [ ] es soll eine extra steuerung geben, die überall auf dem screen funktioniert mit maus der touch: ausgehend von dem punkt wo der touch beginnt, nach rechts soll sich das raumschiff nach rechts drehen und nach links dito. nach oben soll es beschleunigen
-- [ ] Touch tractor beam button inside canvas, wenn ratio long enough rechts und links einer, onst unten. transparente buttons, Button highlights when active (yellow background) der css stil der buttons soll so wie aus 575909e4 
+- [ ] Touch tractor beam button inside canvas, wenn ratio long enough rechts und links einer, sonst unten. transparente buttons, Button highlights when active (yellow background) der css stil der buttons soll so wie schon eingebaut . bei ratio 1.6 soll der umschalter sein, seite oder unten (in constants,js)

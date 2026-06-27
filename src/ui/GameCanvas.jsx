@@ -972,6 +972,55 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       // Render particles
       particleSystem.current.render(ctx, camera.x, camera.y);
 
+      // Draw touch tractor beam button (inside canvas)
+      // Use actual screen dimensions ratio, not internal canvas dimensions
+      // Use side buttons for ratio in range (TOUCH_BUTTON_RATIO_SIDE_MIN < ratio <= TOUCH_BUTTON_RATIO_SIDE_MAX)
+      // Use bottom button for ratio outside this range
+      if (screenRatio > TOUCH_BUTTON_RATIO_SIDE_MIN && screenRatio <= TOUCH_BUTTON_RATIO_SIDE_MAX) {
+        // Side buttons (landscape)
+        const buttonWidth = 60;
+        const buttonHeight = 120;
+        const buttonColor = touchActive ? 'rgba(255, 255, 0, 0.5)' : 'rgba(255, 255, 0, 0.2)';
+        const borderColor = 'rgba(255, 255, 0, 0.5)';
+        
+        // Left button
+        ctx.fillStyle = buttonColor;
+        ctx.fillRect(10, (height - buttonHeight) / 2, buttonWidth, buttonHeight);
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(10, (height - buttonHeight) / 2, buttonWidth, buttonHeight);
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('POD', 10 + buttonWidth / 2, (height - buttonHeight) / 2 + buttonHeight / 2 + 5);
+        
+        // Right button
+        ctx.fillStyle = buttonColor;
+        ctx.fillRect(width - buttonWidth - 10, (height - buttonHeight) / 2, buttonWidth, buttonHeight);
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(width - buttonWidth - 10, (height - buttonHeight) / 2, buttonWidth, buttonHeight);
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('POD', width - buttonWidth - 10 + buttonWidth / 2, (height - buttonHeight) / 2 + buttonHeight / 2 + 5);
+      } else {
+        // Portrait: button at bottom
+        const buttonHeight = 60;
+        const buttonColor = touchActive ? 'rgba(255, 255, 0, 0.5)' : 'rgba(255, 255, 0, 0.2)';
+        const borderColor = 'rgba(255, 255, 0, 0.5)';
+        
+        ctx.fillStyle = buttonColor;
+        ctx.fillRect(10, height - buttonHeight - 10, width - 20, buttonHeight);
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(10, height - buttonHeight - 10, width - 20, buttonHeight);
+        ctx.fillStyle = '#fff';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('POD (Traktorstrahl)', width / 2, height - buttonHeight - 10 + buttonHeight / 2 + 5);
+      }
+
       // X-axis wrapping based on level width, not canvas width
       // Only wrap if the ship is not colliding with walls at the boundary
       if (level && tilesetLoaded) {
