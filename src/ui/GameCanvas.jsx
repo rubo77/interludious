@@ -27,7 +27,7 @@ const BOTTOM_GAP_CLIENT_PX = 20;
 // buttons stay below the HUD regardless of layout/letterboxing.
 // bottomGap is the canvas-space gap above the canvas bottom edge, derived from a
 // fixed screen-pixel value so it stays visually constant across screen sizes.
-function getTouchButtonRects(w, h, ratio, topOffset = 0, bottomGap = 10) {
+function getTouchButtonRects(w, h, ratio, topOffset = 0, bottomGap = 10, showTouchButtons = true) {
   const margin = 10;
   const btnSize = 50;
   const buttons = [];
@@ -37,7 +37,7 @@ function getTouchButtonRects(w, h, ratio, topOffset = 0, bottomGap = 10) {
   // Bottom buttons sit a fixed screen-pixel gap above the canvas bottom edge.
   const bottomBtnY = h - btnSize - bottomGap;
 
-  // POD (tractor beam) buttons
+  // POD (tractor beam) buttons - always visible
   if (ratio > TOUCH_BUTTON_RATIO_THRESHOLD) {
     const bw = 60, bh = 120, y = (h - bh) / 2;
     buttons.push(
@@ -52,23 +52,27 @@ function getTouchButtonRects(w, h, ratio, topOffset = 0, bottomGap = 10) {
     );
   }
 
-  // Thrust buttons (bottom corners)
-  buttons.push(
-    { type: 'thrust', x: margin, y: bottomBtnY, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)' },
-    { type: 'thrust', x: w - btnSize - margin, y: bottomBtnY, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)' }
-  );
+  // Thrust buttons (bottom corners) - only visible when showTouchButtons is true
+  if (showTouchButtons) {
+    buttons.push(
+      { type: 'thrust', x: margin, y: bottomBtnY, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)' },
+      { type: 'thrust', x: w - btnSize - margin, y: bottomBtnY, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)' }
+    );
+  }
 
-  // Fire button (always top-right, below HUD)
+  // Fire button (always top-right, below HUD) - always visible
   buttons.push(
     { type: 'fire', x: w - btnSize - margin, y: topY, w: btnSize, h: btnSize, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)' }
   );
 
-  // Rotate buttons (top-left corner, below HUD)
-  const rotateSize = 40;
-  buttons.push(
-    { type: 'rotateLeft', x: margin, y: topY, w: rotateSize, h: rotateSize, label: '←', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' },
-    { type: 'rotateRight', x: margin + rotateSize + 5, y: topY, w: rotateSize, h: rotateSize, label: '→', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' }
-  );
+  // Rotate buttons (top-left corner, below HUD) - only visible when showTouchButtons is true
+  if (showTouchButtons) {
+    const rotateSize = 40;
+    buttons.push(
+      { type: 'rotateLeft', x: margin, y: topY, w: rotateSize, h: rotateSize, label: '←', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' },
+      { type: 'rotateRight', x: margin + rotateSize + 5, y: topY, w: rotateSize, h: rotateSize, label: '→', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' }
+    );
+  }
 
   return buttons;
 }
@@ -252,12 +256,11 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
     if (!canvas) return;
 
     const getButtonAt = (clientX, clientY) => {
-      if (!showTouchButtons) return null;
       const p = pointerToCanvas(canvas, clientX, clientY, width, height);
       // Measure button geometry live so hit-testing matches the rendered
       // positions even after orientation/resize without relying on event state.
       const { ratio, hudBottomY, bottomGap } = getLiveTouchGeom(canvas, width, height);
-      return getTouchButtonRects(width, height, ratio, hudBottomY, bottomGap).find(
+      return getTouchButtonRects(width, height, ratio, hudBottomY, bottomGap, showTouchButtons).find(
         (b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h
       );
     };
@@ -1297,7 +1300,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       // fixed screen-pixel distance from the on-screen canvas bottom on any
       // aspect ratio, independent of resize/orientation event timing.
       const { ratio: liveRatio, hudBottomY: liveHudBottomY, bottomGap: liveBottomGap } = getLiveTouchGeom(canvasRef.current, width, height);
-      const touchButtons = showTouchButtons ? getTouchButtonRects(width, height, liveRatio, liveHudBottomY, liveBottomGap) : [];
+      const touchButtons = getTouchButtonRects(width, height, liveRatio, liveHudBottomY, liveBottomGap, showTouchButtons);
       for (const btn of touchButtons) {
         let active = false;
         switch (btn.type) {
