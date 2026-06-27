@@ -9,7 +9,7 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_SPEED_FACTOR } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_SPEED_FACTOR, CAMERA_BOTTOM_OFFSET } from '../core/constants.js';
 
 // Client-space height of the DOM HUD overlay (App.jsx top bar).
 // Used to keep the top touch buttons (fire/rotate) below the HUD in every layout.
@@ -923,8 +923,10 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         // Smooth camera interpolation (lerp)
         const lerpFactor = 0.1;
         const clampedTargetX = Math.max(0, Math.min(targetX, Math.max(0, levelWidth - width)));
-        // Allow camera to go above level (sky), but clamp bottom
-        const clampedTargetY = Math.min(targetY, Math.max(0, levelHeight - height));
+        // Allow camera to go above level (sky), but clamp bottom to show full level
+        // If level is taller than canvas, clamp bottom to levelHeight - height
+        // If level is shorter than canvas, clamp bottom to 0 (center level vertically)
+        const clampedTargetY = Math.min(targetY, levelHeight - height + CAMERA_BOTTOM_OFFSET);
         
         setCamera(prev => ({
           x: prev.x + (clampedTargetX - prev.x) * lerpFactor,

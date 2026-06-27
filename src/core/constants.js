@@ -14,6 +14,11 @@ export const GAME_SPEED = 0.5; // Global game speed multiplier (1.0 = full speed
 export const GAME_WIDTH = 800;
 export const GAME_HEIGHT = 600;
 
+// Camera scrolling
+// Additional offset for camera bottom limit to ensure full level is visible
+// Accounts for HUD height, bottom gap, and padding
+export const CAMERA_BOTTOM_OFFSET = 110;
+
 // Pod physics
 export const POD_MASS_FACTOR = 2; // Pod is 2x heavier than the ship (affects tow physics / center of mass)
 export const POD_GRAVITY = 0.055; // Gravity applied to the pod when free-falling (off the holder)
