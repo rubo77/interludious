@@ -118,10 +118,34 @@ function getLiveTouchGeom(canvas, w, h) {
   if (!canvas) {
     return { ratio, hudBottomY: 0, bottomGap: BOTTOM_GAP_CLIENT_PX };
   }
+  const rect = canvas.getBoundingClientRect();
+  const hudBottomY = getHudCanvasBottom(canvas, w, h, HUD_CLIENT_PX);
+  // Calculate the actual gap from the canvas bottom edge to the screen bottom edge
+  // in canvas coordinates, so buttons stay a fixed screen-pixel distance from the
+  // visible bottom regardless of how much vertical space the canvas wrapper occupies.
+  const canvasBottomClient = rect.bottom;
+  const screenBottomClient = window.innerHeight;
+  const gapClient = screenBottomClient - canvasBottomClient;
+  const { scale } = getCanvasContentGeom(canvas, w, h);
+  // If canvas extends beyond screen bottom (gapClient negative), position buttons
+  // inside the visible canvas area instead of at the canvas bottom edge.
+  // The visible canvas height on screen is: rect.height - letterboxVertical
+  const elementRatio = rect.width / rect.height;
+  const canvasRatio = w / h;
+  let letterboxVertical = 0;
+  if (elementRatio <= canvasRatio) {
+    // fit-to-width: vertical letterboxing
+    const drawH = rect.width / canvasRatio;
+    letterboxVertical = (rect.height - drawH) / 2;
+  }
+  // Visible canvas bottom in canvas coordinates
+  const visibleBottomCanvas = (rect.height - letterboxVertical) / scale;
+  // Position buttons 20px from visible bottom, converted to canvas coordinates
+  const bottomGap = h - visibleBottomCanvas + (scale > 0 ? 20 / scale : 20);
   return {
     ratio,
-    hudBottomY: getHudCanvasBottom(canvas, w, h, HUD_CLIENT_PX),
-    bottomGap: getBottomGapCanvas(canvas, w, h, BOTTOM_GAP_CLIENT_PX),
+    hudBottomY,
+    bottomGap,
   };
 }
 
