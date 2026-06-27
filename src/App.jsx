@@ -15,6 +15,7 @@ function App() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [gravityMultiplier, setGravityMultiplier] = useState(1.0);
   const [gameSession, setGameSession] = useState(0); // Increments on each new game to force GameCanvas remount
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
 
   const handleStartGame = () => {
     setGameState('playing');
@@ -61,14 +62,29 @@ function App() {
     setLives(newLives);
   };
 
-  // Mobile detection
+  // Mobile detection and canvas resize
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+
+    const resizeCanvas = () => {
+      // Canvas max size equals browser inner screen
+      const maxWidth = window.innerWidth;
+      const maxHeight = window.innerHeight;
+      setCanvasSize({ width: maxWidth, height: maxHeight });
+    };
+    resizeCanvas();
+
+    window.addEventListener('resize', () => {
+      checkMobile();
+      resizeCanvas();
+    });
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('resize', resizeCanvas);
+    };
   }, []);
 
   // Keyboard shortcuts for game over and level complete screens
