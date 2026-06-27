@@ -9,7 +9,7 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH } from '../core/constants.js';
 
 export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange, onLivesChange, level: levelProp, gravityMultiplier = 1.0, frozen = false }) {
   const canvasRef = useRef(null);
@@ -913,6 +913,19 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         ctx.lineTo(hx - 6, hy + 12);
         ctx.moveTo(hx + 6, hy + 6);
         ctx.lineTo(hx + 6, hy + 12);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Draw the tow tether (visible line between ship and pod when being towed)
+      if (pod && pod.active && pod.towed) {
+        ctx.save();
+        ctx.strokeStyle = '#00ffff'; // Ship color (cyan)
+        ctx.lineWidth = POD_TETHER_WIDTH;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(ship.x - camera.x, ship.y - camera.y);
+        ctx.lineTo(pod.x - camera.x, pod.y - camera.y);
         ctx.stroke();
         ctx.restore();
       }
