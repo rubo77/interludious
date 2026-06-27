@@ -142,6 +142,7 @@ function getLiveTouchGeom(canvas, w, h) {
   const visibleBottomCanvas = (rect.height - letterboxVertical) / scale;
   // Position buttons 20px from visible bottom, converted to canvas coordinates
   const bottomGap = h - visibleBottomCanvas + (scale > 0 ? 20 / scale : 20);
+  console.log('[TOUCH_GEOM] ratio=' + ratio.toFixed(2) + ' elementRatio=' + elementRatio.toFixed(2) + ' canvasRatio=' + canvasRatio.toFixed(2) + ' letterboxVertical=' + letterboxVertical.toFixed(0) + ' visibleBottomCanvas=' + visibleBottomCanvas.toFixed(1) + ' bottomGap=' + bottomGap.toFixed(1) + ' rect.h=' + rect.height.toFixed(0) + ' rect.w=' + rect.width.toFixed(0));
   return {
     ratio,
     hudBottomY,
