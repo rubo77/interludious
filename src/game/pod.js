@@ -40,6 +40,12 @@ export class Pod {
     this.y = y;
   }
 
+  // Set the towed state. Towing also implies the pod has left the holder.
+  setTowing(towing) {
+    this.towed = towing;
+    if (towing) this.onHolder = false;
+  }
+
   // Physically-correct tow: a spring-damper tether connects ship and pod.
   // Forces are applied to BOTH bodies scaled by their mass, so the combined
   // system swings around its center of mass (which sits closer to the heavier pod).
