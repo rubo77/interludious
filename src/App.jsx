@@ -84,39 +84,48 @@ function App() {
 
   const levelButtons = [];
   for (let i = 1; i <= 6; i++) {
+    const isUnlocked = i === 1 || completedLevels.has(i - 1) || completedLevels.has(i);
     levelButtons.push(
       <button
         key={i}
         onClick={() => handleStartLevel(i)}
+        disabled={!isUnlocked}
         style={{
           padding: '12px 16px',
-          cursor: 'pointer',
-          background: completedLevels.has(i) 
-            ? 'linear-gradient(135deg, #00ff88, #00cc66)' 
-            : 'linear-gradient(135deg, #333, #444)',
-          color: '#fff',
-          border: completedLevels.has(i) 
-            ? '1px solid #00ff88' 
-            : '1px solid #555',
+          cursor: isUnlocked ? 'pointer' : 'not-allowed',
+          background: completedLevels.has(i)
+            ? 'linear-gradient(135deg, #00ff88, #00cc66)'
+            : isUnlocked
+            ? 'linear-gradient(135deg, #333, #444)'
+            : 'linear-gradient(135deg, #1a1a1a, #2a2a2a)',
+          color: isUnlocked ? '#fff' : '#555',
+          border: completedLevels.has(i)
+            ? '1px solid #00ff88'
+            : isUnlocked
+            ? '1px solid #555'
+            : '1px solid #333',
           borderRadius: '8px',
           margin: '4px',
           fontWeight: '600',
           fontSize: '14px',
           transition: 'all 0.2s ease',
-          boxShadow: completedLevels.has(i) 
-            ? '0 2px 10px rgba(0, 255, 136, 0.3)' 
+          opacity: isUnlocked ? 1 : 0.5,
+          boxShadow: completedLevels.has(i)
+            ? '0 2px 10px rgba(0, 255, 136, 0.3)'
             : 'none',
         }}
         onMouseEnter={(e) => {
+          if (!isUnlocked) return;
           e.target.style.transform = 'translateY(-2px)';
-          e.target.style.boxShadow = completedLevels.has(i) 
-            ? '0 4px 15px rgba(0, 255, 136, 0.5)' 
+          e.target.style.boxShadow = completedLevels.has(i)
+            ? '0 4px 15px rgba(0, 255, 136, 0.5)'
             : '0 4px 15px rgba(0, 0, 0, 0.3)';
         }}
         onMouseLeave={(e) => {
+          if (!isUnlocked) return;
           e.target.style.transform = 'translateY(0)';
-          e.target.style.boxShadow = completedLevels.has(i) 
-            ? '0 2px 10px rgba(0, 255, 136, 0.3)' 
+          e.target.style.boxShadow = completedLevels.has(i)
+            ? '0 2px 10px rgba(0, 255, 136, 0.3)'
             : 'none';
         }}
       >
