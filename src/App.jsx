@@ -71,16 +71,21 @@ function App() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Keyboard shortcuts for game over screen
+  // Keyboard shortcuts for game over and level complete screens
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (gameState === 'gameover') {
-        if (e.key === ' ' || e.key === 'Space') {
+        if (e.key === ' ' || e.key === 'Space' || e.key === 'Enter') {
           e.preventDefault();
           handleStartGame();
         } else if (e.key === 'Escape') {
           e.preventDefault();
           setGameState('menu');
+        }
+      } else if (gameState === 'levelcomplete') {
+        if (e.key === ' ' || e.key === 'Space' || e.key === 'Enter') {
+          e.preventDefault();
+          handleNextLevel();
         }
       }
     };
