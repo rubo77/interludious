@@ -1,6 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import HamburgerMenu from './HamburgerMenu';
 
-export default function Menu({ onStart }) {
+export default function Menu({ onStart, levelButtons, onBackToMenu, appVersion }) {
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   // Allow starting the game with Space or Enter
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -14,16 +16,33 @@ export default function Menu({ onStart }) {
   }, [onStart]);
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
       justifyContent: 'center',
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)',
       color: '#fff',
       fontFamily: 'system-ui, -apple-system, sans-serif',
+      position: 'relative',
     }}>
+      {/* Hamburger menu button */}
+      <button
+        onClick={() => setShowMobileMenu(!showMobileMenu)}
+        style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px', zIndex: 10 }}
+      >
+        ☰
+      </button>
+
+      {/* Hamburger menu overlay */}
+      <HamburgerMenu
+        isOpen={showMobileMenu}
+        onClose={() => setShowMobileMenu(false)}
+        levelButtons={levelButtons || []}
+        onBackToMenu={onBackToMenu}
+        appVersion={appVersion}
+      />
       <div style={{
         textAlign: 'center',
         padding: '40px 60px',
@@ -33,8 +52,18 @@ export default function Menu({ onStart }) {
         backdropFilter: 'blur(20px)',
         boxShadow: '0 8px 40px rgba(0, 0, 0, 0.6)',
       }}>
-        <h1 style={{ 
-          fontSize: '48px', 
+        <img 
+          src="/dev/ideas/logo2.png" 
+          alt="Interludious Logo" 
+          style={{ 
+            width: '200px', 
+            height: 'auto', 
+            marginBottom: '20px',
+            borderRadius: '10px',
+          }}
+        />
+        <h1 style={{
+          fontSize: '48px',
           fontWeight: '800',
           margin: '0 0 10px 0',
           background: 'linear-gradient(135deg, #00ff88, #00ccff)',

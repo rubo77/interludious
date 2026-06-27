@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Menu from './ui/Menu';
 import GameCanvas from './ui/GameCanvas';
 import OverlayMessage from './ui/OverlayMessage';
+import HamburgerMenu from './ui/HamburgerMenu';
 
 const APP_VERSION = '1.0'; // From interludious/app/build.gradle versionName
 
 function App() {
-  const [gameState, setGameState] = useState('playing'); // Start directly in playing mode
+  const [gameState, setGameState] = useState('menu'); // Start with menu screen
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [level, setLevel] = useState(1);
@@ -69,6 +70,63 @@ function App() {
     localStorage.setItem('thrust_completedLevels', JSON.stringify([...completedLevels]));
   }, [completedLevels]);
 
+  // Generate level buttons (DRY: used by hamburger menu)
+  const generateLevelButtons = () => {
+    const buttons = [];
+    for (let i = 1; i <= 6; i++) {
+      const isUnlocked = i === 1 || completedLevels.has(i - 1) || completedLevels.has(i);
+      buttons.push(
+        <button
+          key={i}
+          onClick={() => handleStartLevel(i)}
+          disabled={!isUnlocked}
+          style={{
+            padding: '12px 16px',
+            cursor: isUnlocked ? 'pointer' : 'not-allowed',
+            background: completedLevels.has(i)
+              ? 'linear-gradient(135deg, #00ff88, #00cc66)'
+              : isUnlocked
+              ? 'linear-gradient(135deg, #333, #444)'
+              : 'linear-gradient(135deg, #1a1a1a, #2a2a2a)',
+            color: isUnlocked ? '#fff' : '#555',
+            border: completedLevels.has(i)
+              ? '1px solid #00ff88'
+              : isUnlocked
+              ? '1px solid #555'
+              : '1px solid #333',
+            borderRadius: '8px',
+            margin: '4px',
+            fontWeight: '600',
+            fontSize: '14px',
+            transition: 'all 0.2s ease',
+            opacity: isUnlocked ? 1 : 0.5,
+            boxShadow: completedLevels.has(i)
+              ? '0 2px 10px rgba(0, 255, 136, 0.3)'
+              : 'none',
+          }}
+          onMouseEnter={(e) => {
+            if (!isUnlocked) return;
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = completedLevels.has(i)
+              ? '0 4px 15px rgba(0, 255, 136, 0.5)'
+              : '0 4px 15px rgba(0, 0, 0, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            if (!isUnlocked) return;
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = completedLevels.has(i)
+              ? '0 2px 10px rgba(0, 255, 136, 0.3)'
+              : 'none';
+          }}
+        >
+          Level {i}
+          {completedLevels.has(i) && ' ✓'}
+        </button>
+      );
+    }
+    return buttons;
+  };
+
   // Keyboard shortcuts for game over and level complete screens
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -92,63 +150,15 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameState]);
 
-  const levelButtons = [];
-  for (let i = 1; i <= 6; i++) {
-    const isUnlocked = i === 1 || completedLevels.has(i - 1) || completedLevels.has(i);
-    levelButtons.push(
-      <button
-        key={i}
-        onClick={() => handleStartLevel(i)}
-        disabled={!isUnlocked}
-        style={{
-          padding: '12px 16px',
-          cursor: isUnlocked ? 'pointer' : 'not-allowed',
-          background: completedLevels.has(i)
-            ? 'linear-gradient(135deg, #00ff88, #00cc66)'
-            : isUnlocked
-            ? 'linear-gradient(135deg, #333, #444)'
-            : 'linear-gradient(135deg, #1a1a1a, #2a2a2a)',
-          color: isUnlocked ? '#fff' : '#555',
-          border: completedLevels.has(i)
-            ? '1px solid #00ff88'
-            : isUnlocked
-            ? '1px solid #555'
-            : '1px solid #333',
-          borderRadius: '8px',
-          margin: '4px',
-          fontWeight: '600',
-          fontSize: '14px',
-          transition: 'all 0.2s ease',
-          opacity: isUnlocked ? 1 : 0.5,
-          boxShadow: completedLevels.has(i)
-            ? '0 2px 10px rgba(0, 255, 136, 0.3)'
-            : 'none',
-        }}
-        onMouseEnter={(e) => {
-          if (!isUnlocked) return;
-          e.target.style.transform = 'translateY(-2px)';
-          e.target.style.boxShadow = completedLevels.has(i)
-            ? '0 4px 15px rgba(0, 255, 136, 0.5)'
-            : '0 4px 15px rgba(0, 0, 0, 0.3)';
-        }}
-        onMouseLeave={(e) => {
-          if (!isUnlocked) return;
-          e.target.style.transform = 'translateY(0)';
-          e.target.style.boxShadow = completedLevels.has(i)
-            ? '0 2px 10px rgba(0, 255, 136, 0.3)'
-            : 'none';
-        }}
-      >
-        Level {i}
-        {completedLevels.has(i) && ' ✓'}
-      </button>
-    );
-  }
-
   return (
     <div className="app" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100vw', height: '100vh', backgroundColor: '#000', color: '#fff', position: 'relative', overflow: 'hidden', touchAction: 'none' }}>
       {gameState === 'menu' && (
-        <Menu onStart={handleStartGame} />
+        <Menu
+          onStart={handleStartGame}
+          levelButtons={generateLevelButtons()}
+          onBackToMenu={() => {}}
+          appVersion={APP_VERSION}
+        />
       )}
 
       {(gameState === 'playing' || gameState === 'gameover' || gameState === 'levelcomplete') && (
@@ -218,40 +228,13 @@ function App() {
           </div>
 
           {/* Menu overlay for level selection and controls */}
-          {showMobileMenu && (
-            <div style={{ position: 'absolute', top: '50px', right: '0', width: '250px', background: 'rgba(20, 20, 20, 0.95)', backdropFilter: 'blur(10px)', borderLeft: '1px solid rgba(255, 255, 255, 0.1)', padding: '20px', zIndex: 100 }}>
-              <button
-                onClick={() => setShowMobileMenu(false)}
-                style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' }}
-              >
-                ✕
-              </button>
-
-              <h3 style={{ margin: '0 0 15px 0', color: '#fff', fontWeight: '600', fontSize: '14px' }}>SELECT LEVEL</h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
-                {levelButtons}
-              </div>
-
-              <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontWeight: '600', fontSize: '14px' }}>CONTROLS</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: '#aaa', marginBottom: '20px' }}>
-                <div><span style={{ color: '#fff' }}>↑ / W</span> - Thrust</div>
-                <div><span style={{ color: '#fff' }}>← / A</span> - Rotate Left</div>
-                <div><span style={{ color: '#fff' }}>→ / D</span> - Rotate Right</div>
-                <div><span style={{ color: '#fff' }}>Space</span> - Tractor Beam</div>
-                <div><span style={{ color: '#fff' }}>X</span> - Shoot</div>
-              </div>
-
-              <button
-                onClick={() => { setGameState('menu'); setShowMobileMenu(false); }}
-                style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #444, #555)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
-              >
-                Back to Menu
-              </button>
-              <div style={{ marginTop: '15px', fontSize: '10px', color: '#555', textAlign: 'center' }}>
-                v{APP_VERSION}
-              </div>
-            </div>
-          )}
+          <HamburgerMenu
+            isOpen={showMobileMenu}
+            onClose={() => setShowMobileMenu(false)}
+            levelButtons={generateLevelButtons()}
+            onBackToMenu={() => { setGameState('menu'); setShowMobileMenu(false); }}
+            appVersion={APP_VERSION}
+          />
         </>
       )}
     </div>
