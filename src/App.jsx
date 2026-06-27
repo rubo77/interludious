@@ -155,20 +155,23 @@ function App() {
   }, [gameState]);
 
   return (
-    <div className="app" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100vw', height: '100vh', backgroundColor: '#000', color: '#fff', position: 'relative', overflow: 'hidden', touchAction: 'none' }}>
+    <div className="app" id="app" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100vw', height: '100vh', backgroundColor: '#000', color: '#fff', position: 'relative', overflow: 'hidden', touchAction: 'none' }}>
       {gameState === 'menu' && (
-        <Menu
-          onStart={handleStartGame}
-          levelButtons={generateLevelButtons()}
-          onBackToMenu={() => {}}
-          appVersion={APP_VERSION}
-        />
+        <div id="menu-container" style={{ width: '100%', height: '100%' }}>
+          <Menu
+            onStart={handleStartGame}
+            levelButtons={generateLevelButtons()}
+            onBackToMenu={() => {}}
+            appVersion={APP_VERSION}
+          />
+        </div>
       )}
 
       {(gameState === 'playing' || gameState === 'gameover' || gameState === 'levelcomplete') && (
         <>
           {/* Hamburger button - outside all containers with position fixed */}
           <button
+            id="hamburger-button"
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             style={{ position: 'fixed', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px', zIndex: 1001 }}
           >
@@ -176,8 +179,8 @@ function App() {
           </button>
 
           {/* HUD overlay on top */}
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(0, 0, 0, 0.8)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', zIndex: 10 }}>
-            <div style={{ display: 'flex', flexDirection: 'row', gap: '16px', fontSize: '12px', color: '#fff', alignItems: 'center' }}>
+          <div id="hud-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(0, 0, 0, 0.8)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', zIndex: 10 }}>
+            <div id="hud-stats" style={{ display: 'flex', flexDirection: 'row', gap: '16px', fontSize: '12px', color: '#fff', alignItems: 'center' }}>
               <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>SCORE{score}</span>
               <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LIVES{'❤️'.repeat(lives)}</span>
               <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LEVEL{level}</span>
@@ -186,8 +189,8 @@ function App() {
           </div>
 
           {/* Canvas wrapper for scaled canvas and centered overlays */}
-          <div style={{ flex: 1, width: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
-            <div style={{ position: 'relative', width: '100%', height: '100%', maxWidth: '100%', maxHeight: '100%' }}>
+          <div id="canvas-wrapper" style={{ flex: 1, width: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
+            <div id="canvas-container" style={{ position: 'relative', width: '100%', height: '100%', maxWidth: '100%', maxHeight: '100%' }}>
               <GameCanvas
                 key={`game-${gameSession}`}
                 onFuelChange={setFuel}

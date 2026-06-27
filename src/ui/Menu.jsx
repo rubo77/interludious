@@ -16,21 +16,26 @@ export default function Menu({ onStart, levelButtons, onBackToMenu, appVersion }
   }, [onStart]);
 
   return (
-    <div style={{
+    <div id="menu" style={{
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)',
+      backgroundImage: 'url(/dev/ideas/logo2.png)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
       color: '#fff',
       fontFamily: 'system-ui, -apple-system, sans-serif',
       position: 'relative',
+      padding: '20px',
     }}>
-      {/* Hamburger menu button */}
+      {/* Hamburger menu button - always on the right */}
       <button
+        id="menu-hamburger-button"
         onClick={() => setShowMobileMenu(!showMobileMenu)}
-        style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px', zIndex: 1001 }}
+        style={{ position: 'fixed', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px', zIndex: 1001 }}
       >
         ☰
       </button>
@@ -43,50 +48,39 @@ export default function Menu({ onStart, levelButtons, onBackToMenu, appVersion }
         onBackToMenu={onBackToMenu}
         appVersion={appVersion}
       />
-      <div style={{
+      <div id="menu-content" style={{
         textAlign: 'center',
-        padding: '40px 60px',
-        background: 'linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.95))',
+        padding: 'clamp(20px, 5vw, 60px)',
+        background: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(10px)',
         borderRadius: '20px',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(20px)',
-        boxShadow: '0 8px 40px rgba(0, 0, 0, 0.6)',
+        maxWidth: '100%',
+        maxHeight: '100%',
+        overflow: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 'clamp(20px, 5vw, 40px)',
       }}>
-        <img 
-          src="/dev/ideas/logo2.png" 
-          alt="Interludious Logo" 
-          style={{ 
-            width: '200px', 
-            height: 'auto', 
-            marginBottom: '20px',
-            borderRadius: '10px',
-          }}
-        />
         <h1 style={{
-          fontSize: '48px',
+          fontSize: 'clamp(24px, 6vw, 64px)',
           fontWeight: '800',
-          margin: '0 0 10px 0',
+          margin: '0',
           background: 'linear-gradient(135deg, #00ff88, #00ccff)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
           letterSpacing: '-2px',
+          textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
         }}>
           INTERLUDIOUS
         </h1>
-        <p style={{ 
-          fontSize: '16px', 
-          color: '#888',
-          margin: '0 0 40px 0',
-          letterSpacing: '1px',
-        }}>
-          A MODERN TAKE ON THE CLASSIC THRUST
-        </p>
-        <button 
+        <button
           onClick={onStart}
           style={{
-            padding: '16px 48px',
-            fontSize: '18px',
+            padding: 'clamp(12px, 3vw, 20px) clamp(24px, 6vw, 60px)',
+            fontSize: 'clamp(14px, 3.5vw, 20px)',
             fontWeight: '600',
             color: '#fff',
             background: 'linear-gradient(135deg, #00ff88, #00cc66)',
