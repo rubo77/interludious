@@ -47,6 +47,11 @@ export class Ship {
     this.rotation = (this.angle * 180 / Math.PI) % 360;
   }
 
+  setAngle(angle) {
+    this.angle = angle;
+    this.rotation = (angle * 180 / Math.PI) % 360;
+  }
+
   setThrust(thrusting) {
     this.thrust = thrusting ? 1 : 0;
   }

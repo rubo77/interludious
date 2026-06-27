@@ -27,4 +27,8 @@ export const POD_TETHER_WIDTH = 1; // Width of the visible tether line (pixels)
 // Screen aspect ratio (width / height) at which the tractor-beam touch button switches position:
 // ratio > threshold -> side buttons (left & right), ratio <= threshold -> single bottom button
 export const TOUCH_BUTTON_RATIO_THRESHOLD = 1.9;
+// Virtual joystick: minimum movement (pixels) to activate direction control
+export const JOYSTICK_THRESHOLD = 30;
+// Virtual joystick: scale factor for rotation speed based on horizontal movement
+export const JOYSTICK_SPEED_FACTOR = 0.0005;
 

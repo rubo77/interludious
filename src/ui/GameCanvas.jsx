@@ -9,7 +9,7 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_SPEED_FACTOR } from '../core/constants.js';
 
 // Client-space height of the DOM HUD overlay (App.jsx top bar).
 // Used to keep the top touch buttons (fire/rotate) below the HUD in every layout.
@@ -171,6 +171,10 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [fireActive, setFireActive] = useState(false); // fire button pressed
   const [rotateLeftActive, setRotateLeftActive] = useState(false); // rotate left button pressed
   const [rotateRightActive, setRotateRightActive] = useState(false); // rotate right button pressed
+  // Virtual joystick control (touch/mouse anywhere on screen)
+  const [joystickActive, setJoystickActive] = useState(false);
+  const [joystickStart, setJoystickStart] = useState({ x: 0, y: 0 });
+  const [joystickRotationSpeed, setJoystickRotationSpeed] = useState(0); // rotation speed from joystick
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [tilesetLoaded, setTilesetLoaded] = useState(false);
@@ -252,6 +256,31 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           case 'rotateLeft': setRotateLeftActive(true); break;
           case 'rotateRight': setRotateRightActive(true); break;
         }
+      } else {
+        // Virtual joystick: activate anywhere on screen
+        e.preventDefault();
+        setJoystickActive(true);
+        setJoystickStart({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    const handlePointerMove = (e) => {
+      if (!joystickActive) return;
+      const dx = e.clientX - joystickStart.x;
+      const dy = e.clientY - joystickStart.y;
+      // Horizontal movement: rotation speed based on horizontal velocity
+      // Map horizontal movement to rotation speed: left -> negative, right -> positive
+      if (Math.abs(dx) > JOYSTICK_THRESHOLD) {
+        const rotationSpeed = dx * JOYSTICK_SPEED_FACTOR;
+        setJoystickRotationSpeed(rotationSpeed);
+      } else {
+        setJoystickRotationSpeed(0);
+      }
+      // Vertical movement: thrust up
+      if (dy < -JOYSTICK_THRESHOLD) {
+        setThrustActive(true);
+      } else {
+        setThrustActive(false);
       }
     };
 
@@ -261,18 +290,22 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       setFireActive(false);
       setRotateLeftActive(false);
       setRotateRightActive(false);
+      setJoystickActive(false);
+      setJoystickRotationSpeed(0);
     };
 
     canvas.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('pointercancel', handlePointerUp);
 
     return () => {
       canvas.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [width, height]);
+  }, [width, height, joystickActive, joystickStart, joystickRotationSpeed]);
 
   useEffect(() => {
     const loadAssets = async () => {
@@ -536,11 +569,18 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
 
       // Handle input (skipped while the ship is exploding)
       if (!isDying) {
-        if (keys['ArrowLeft'] || keys['a'] || keys['A'] || rotateLeftActive) {
-          ship.rotateLeft();
-        }
-        if (keys['ArrowRight'] || keys['d'] || keys['D'] || rotateRightActive) {
-          ship.rotateRight();
+        // Joystick rotation speed control
+        if (joystickRotationSpeed !== 0) {
+          ship.angle += joystickRotationSpeed;
+          ship.rotation = (ship.angle * 180 / Math.PI) % 360;
+        } else {
+          // Keyboard/button rotation (continuous)
+          if (keys['ArrowLeft'] || keys['a'] || keys['A'] || rotateLeftActive) {
+            ship.rotateLeft();
+          }
+          if (keys['ArrowRight'] || keys['d'] || keys['D'] || rotateRightActive) {
+            ship.rotateRight();
+          }
         }
         if (keys['ArrowUp'] || keys['w'] || keys['W'] || thrustActive) {
           ship.setThrust(true);
