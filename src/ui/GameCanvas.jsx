@@ -11,16 +11,22 @@ import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
 import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD } from '../core/constants.js';
 
+// Client-space height of the DOM HUD overlay (App.jsx top bar).
+// Used to keep the top touch buttons (fire/rotate) below the HUD in every layout.
+const HUD_CLIENT_PX = 40;
+
 // Geometry of all touch control buttons in canvas-internal coordinates.
 // Returns an array of button objects with type, position, size, label, and color.
 // Shared by both the renderer and the pointer hit-testing (DRY).
-function getTouchButtonRects(w, h, ratio) {
+// topOffset is the canvas-space y where the DOM HUD ends, so the fire/rotate
+// buttons stay below the HUD regardless of layout/letterboxing.
+function getTouchButtonRects(w, h, ratio, topOffset = 0) {
   const margin = 10;
   const btnSize = 50;
   const buttons = [];
 
-  // HUD height is proportional to canvas height (8% of canvas height)
-  const hudHeight = h * 0.08;
+  // Top buttons (fire/rotate) start just below the HUD.
+  const topY = topOffset + margin;
 
   // POD (tractor beam) buttons
   if (ratio > TOUCH_BUTTON_RATIO_THRESHOLD) {
@@ -46,17 +52,39 @@ function getTouchButtonRects(w, h, ratio) {
 
   // Fire button (always top-right, below HUD)
   buttons.push(
-    { type: 'fire', x: w - btnSize - margin, y: hudHeight + margin, w: btnSize, h: btnSize, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)' }
+    { type: 'fire', x: w - btnSize - margin, y: topY, w: btnSize, h: btnSize, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)' }
   );
 
   // Rotate buttons (top-left corner, below HUD)
   const rotateSize = 40;
   buttons.push(
-    { type: 'rotateLeft', x: margin, y: hudHeight + margin, w: rotateSize, h: rotateSize, label: '←', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' },
-    { type: 'rotateRight', x: margin + rotateSize + 5, y: hudHeight + margin, w: rotateSize, h: rotateSize, label: '→', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' }
+    { type: 'rotateLeft', x: margin, y: topY, w: rotateSize, h: rotateSize, label: '←', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' },
+    { type: 'rotateRight', x: margin + rotateSize + 5, y: topY, w: rotateSize, h: rotateSize, label: '→', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)' }
   );
 
   return buttons;
+}
+
+// Compute the canvas-space y where the DOM HUD overlay ends, accounting for
+// object-fit: contain letterboxing. The HUD sits at client top: 0; in side
+// layout the canvas reaches near the screen top so the HUD overlaps it.
+function getHudCanvasBottom(canvas, w, h, hudClientPx) {
+  const rect = canvas.getBoundingClientRect();
+  if (rect.height === 0) return 0;
+  const elementRatio = rect.width / rect.height;
+  const canvasRatio = w / h;
+  let drawH, offsetY;
+  if (elementRatio > canvasRatio) {
+    drawH = rect.height;
+    offsetY = 0;
+  } else {
+    drawH = rect.width / canvasRatio;
+    offsetY = (rect.height - drawH) / 2;
+  }
+  const contentTopClient = rect.top + offsetY;
+  const hudCoverClient = Math.max(0, hudClientPx - contentTopClient);
+  const scale = drawH / h;
+  return scale > 0 ? hudCoverClient / scale : 0;
 }
 
 // Convert pointer client coordinates to canvas-internal coordinates,
@@ -93,6 +121,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [rotateLeftActive, setRotateLeftActive] = useState(false); // rotate left button pressed
   const [rotateRightActive, setRotateRightActive] = useState(false); // rotate right button pressed
   const [screenRatio, setScreenRatio] = useState(() => (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 4 / 3));
+  const [hudBottomY, setHudBottomY] = useState(0); // canvas-space y where the DOM HUD ends
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [tilesetLoaded, setTilesetLoaded] = useState(false);
@@ -148,12 +177,20 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
     };
   }, []);
 
-  // Track screen aspect ratio so the touch button(s) reposition on resize/orientation change
+  // Track screen aspect ratio and HUD overlap so the touch buttons reposition
+  // on resize/orientation change.
   useEffect(() => {
-    const onResize = () => setScreenRatio(window.innerWidth / window.innerHeight);
+    const onResize = () => {
+      setScreenRatio(window.innerWidth / window.innerHeight);
+      const canvas = canvasRef.current;
+      if (canvas) {
+        setHudBottomY(getHudCanvasBottom(canvas, width, height, HUD_CLIENT_PX));
+      }
+    };
+    onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, []);
+  }, [width, height]);
 
   // Pointer handling for all on-screen touch buttons (mouse + touch)
   useEffect(() => {
@@ -162,7 +199,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
 
     const getButtonAt = (clientX, clientY) => {
       const p = pointerToCanvas(canvas, clientX, clientY, width, height);
-      return getTouchButtonRects(width, height, screenRatio).find(
+      return getTouchButtonRects(width, height, screenRatio, hudBottomY).find(
         (b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h
       );
     };
@@ -198,7 +235,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [width, height, screenRatio]);
+  }, [width, height, screenRatio, hudBottomY]);
 
   useEffect(() => {
     const loadAssets = async () => {
@@ -1099,14 +1136,13 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         ctx.restore();
       }
 
-      // Render particles
-      particleSystem.current.render(ctx, camera.x, camera.y);
-
       // Draw all touch control buttons (inside canvas).
       // Geometry comes from the shared helper so rendering and hit-testing stay in sync (DRY).
       // Transparent buttons, highlight when active.
+      // Render after screen shake restore to ensure they are in correct position.
       ctx.textAlign = 'center';
-      for (const btn of getTouchButtonRects(width, height, screenRatio)) {
+      const touchButtons = getTouchButtonRects(width, height, screenRatio, hudBottomY);
+      for (const btn of touchButtons) {
         let active = false;
         switch (btn.type) {
           case 'pod': active = touchActive; break;
@@ -1124,6 +1160,9 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         ctx.font = btn.font;
         ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2 + 5);
       }
+
+      // Render particles
+      particleSystem.current.render(ctx, camera.x, camera.y);
 
       // X-axis wrapping based on level width, not canvas width
       // Only wrap if the ship is not colliding with walls at the boundary
