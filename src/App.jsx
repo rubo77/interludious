@@ -181,9 +181,9 @@ function App() {
           {/* HUD overlay on top */}
           <div id="hud-overlay" style={{ position: 'absolute', top: 0, left: 0, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(0, 0, 0, 0.8)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', zIndex: 10 }}>
             <div id="hud-stats" style={{ display: 'flex', flexDirection: 'row', gap: '16px', fontSize: '12px', color: '#fff', alignItems: 'center' }}>
-              <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>SCORE{score}</span>
-              <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LIVES{'❤️'.repeat(lives)}</span>
-              <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LEVEL{level}</span>
+              <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>SCORE {score}</span>
+              <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LIVES {'❤️'.repeat(lives)}</span>
+              <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LEVEL {level}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>FUEL</span>
                 <div style={{ width: '80px', height: '12px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '6px', overflow: 'hidden' }}>
