@@ -28,8 +28,10 @@ function getTouchButtonRects(w, h, ratio) {
     );
   } else {
     const bh = 60;
+    // Make the bottom POD button narrower to leave room for thrust buttons in corners
+    const podWidth = w - 2 * (btnSize + margin * 2);
     buttons.push(
-      { type: 'pod', x: margin, y: h - bh - margin, w: w - 2 * margin, h: bh, label: 'POD (Traktorstrahl)', font: '16px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)' }
+      { type: 'pod', x: btnSize + margin * 2, y: h - bh - margin, w: podWidth, h: bh, label: 'POD (Traktorstrahl)', font: '16px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)' }
     );
   }
 
