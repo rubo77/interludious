@@ -18,9 +18,9 @@ export default function HamburgerMenu({ isOpen, onClose, levelButtons, onBackToM
     <div ref={menuRef} style={{ position: 'absolute', top: '50px', right: '0', width: '250px', maxHeight: '80vh', background: 'rgba(20, 20, 20, 0.95)', backdropFilter: 'blur(10px)', borderLeft: '1px solid rgba(255, 255, 255, 0.1)', padding: '20px', zIndex: 2000, overflowY: 'auto', scrollbarWidth: 'auto' }}>
       <button
         onClick={scrollToBottom}
-        style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' }}
+        style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer' }}
       >
-        ↓
+        ⌄
       </button>
 
       <h3 style={{ margin: '0 0 15px 0', color: '#fff', fontWeight: '600', fontSize: '14px' }}>SELECT LEVEL</h3>
