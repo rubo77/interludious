@@ -17,4 +17,5 @@ export const POD_TETHER_LENGTH = 50; // Rest length of the tow tether (pixels)
 export const POD_TETHER_STIFFNESS = 0.18; // Spring stiffness of the tow tether
 export const POD_TETHER_DAMPING = 0.12; // Damping of the tow tether to prevent oscillation
 export const POD_HOLDER_OFFSET = 14; // Pixels the pod sits ABOVE its holder marker (avoids holder collision)
+export const POD_TETHER_WIDTH = 2; // Width of the visible tether line (pixels)
 
