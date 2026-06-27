@@ -143,8 +143,9 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         }
 
         // Remove the 'm' pod marker tile from the layout: in the tileset it renders
-        // as a ball AND its char code (109) counts as a wall, which made the pod
-        // explode the moment it left the holder. The pod + holder are drawn separately.
+        // as a transparent ball AND its char code (109) counts as a wall, which made
+        // the pod explode the moment it left the holder. The holder itself is built
+        // from the surrounding stand tiles (digits 0-4) and stays in the layout.
         const cleanedLayout = layout.map(row => row.replace(/m/g, ' '));
 
         console.log('[LEVEL] Loaded level1:', layout.length, 'rows x', lenx, 'cols');
@@ -886,36 +887,6 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         
         ctx.restore();
       });
-
-      // Draw the pod holder (a simple metal cradle, no transparent ball)
-      if (podPosition) {
-        const hx = podPosition.x - camera.x;
-        const hy = podPosition.y - camera.y;
-        ctx.save();
-        ctx.strokeStyle = '#9aa0a6';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        // Base bar
-        ctx.beginPath();
-        ctx.moveTo(hx - 10, hy + 6);
-        ctx.lineTo(hx + 10, hy + 6);
-        ctx.stroke();
-        // Two cradle arms reaching up to hold the pod
-        ctx.beginPath();
-        ctx.moveTo(hx - 9, hy + 6);
-        ctx.lineTo(hx - 7, hy - 6);
-        ctx.moveTo(hx + 9, hy + 6);
-        ctx.lineTo(hx + 7, hy - 6);
-        ctx.stroke();
-        // Two short support legs
-        ctx.beginPath();
-        ctx.moveTo(hx - 6, hy + 6);
-        ctx.lineTo(hx - 6, hy + 12);
-        ctx.moveTo(hx + 6, hy + 6);
-        ctx.lineTo(hx + 6, hy + 12);
-        ctx.stroke();
-        ctx.restore();
-      }
 
       // Draw the tow tether (visible line between ship and pod when being towed)
       if (pod && pod.active && pod.towed) {
