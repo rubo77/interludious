@@ -62,6 +62,7 @@ export default function Menu({ onStart, levelButtons, onBackToMenu, appVersion }
         alignItems: 'center',
         justifyContent: 'center',
         gap: 'clamp(20px, 5vw, 40px)',
+        margin: 'auto',
       }}>
         <h1 style={{
           fontSize: 'clamp(24px, 6vw, 64px)',
