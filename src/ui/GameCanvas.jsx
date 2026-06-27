@@ -41,19 +41,11 @@ function getTouchButtonRects(w, h, ratio) {
     { type: 'thrust', x: w - btnSize - margin, y: h - btnSize - margin, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)' }
   );
 
-  // Fire buttons
-  if (ratio > TOUCH_BUTTON_RATIO_THRESHOLD) {
-    // Side layout: fire buttons above thrust buttons
-    buttons.push(
-      { type: 'fire', x: margin, y: h - btnSize * 2 - margin * 2, w: btnSize, h: btnSize, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)' },
-      { type: 'fire', x: w - btnSize - margin, y: h - btnSize * 2 - margin * 2, w: btnSize, h: btnSize, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)' }
-    );
-  } else {
-    // Bottom layout: single fire button in top-right corner
-    buttons.push(
-      { type: 'fire', x: w - btnSize - margin, y: margin, w: btnSize, h: btnSize, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)' }
-    );
-  }
+  // Fire button (always top-right, below HUD)
+  const hudHeight = 60;
+  buttons.push(
+    { type: 'fire', x: w - btnSize - margin, y: hudHeight + margin, w: btnSize, h: btnSize, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)' }
+  );
 
   // Rotate buttons (top-left corner)
   const rotateSize = 40;

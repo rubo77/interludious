@@ -27,3 +27,5 @@ yarn-error.log*
 # Testing
 coverage/
 node_modules
+playwright-report/*
+test-results/*
