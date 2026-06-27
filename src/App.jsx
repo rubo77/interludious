@@ -184,7 +184,12 @@ function App() {
               <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>SCORE{score}</span>
               <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LIVES{'❤️'.repeat(lives)}</span>
               <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>LEVEL{level}</span>
-              <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>FUEL</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontWeight: '600', whiteSpace: 'nowrap' }}>FUEL</span>
+                <div style={{ width: '80px', height: '12px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '6px', overflow: 'hidden' }}>
+                  <div style={{ width: `${fuel}%`, height: '100%', background: fuel > 30 ? 'linear-gradient(90deg, #00ff88, #00cc66)' : 'linear-gradient(90deg, #ff4444, #cc0000)', transition: 'width 0.3s ease' }} />
+                </div>
+              </div>
             </div>
           </div>
 
