@@ -3,6 +3,8 @@ import Menu from './ui/Menu';
 import GameCanvas from './ui/GameCanvas';
 import OverlayMessage from './ui/OverlayMessage';
 
+const APP_VERSION = '1.0'; // From interludious/app/build.gradle versionName
+
 function App() {
   const [gameState, setGameState] = useState('playing'); // Start directly in playing mode
   const [score, setScore] = useState(0);
@@ -245,6 +247,9 @@ function App() {
               >
                 Back to Menu
               </button>
+              <div style={{ marginTop: '15px', fontSize: '10px', color: '#555', textAlign: 'center' }}>
+                v{APP_VERSION}
+              </div>
             </div>
           )}
         </>
