@@ -463,8 +463,8 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
           const distanceToRestart = Math.sqrt(
             (pod.x - restartPosition.x) ** 2 + (pod.y - restartPosition.y) ** 2
           );
-          if (distanceToRestart < 20 && !pod.towed) {
-            // Start docking animation
+          if (distanceToRestart < 20) {
+            // Start docking animation (works whether pod is towed or not)
             setGameState('docking');
             setDockingAnimation({ progress: 0, phase: 'docking' });
           }
