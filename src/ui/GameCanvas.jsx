@@ -9,7 +9,7 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET } from '../core/constants.js';
 
 export default function GameCanvas({ width = 800, height = 600, onFuelChange, onLevelComplete, onGameOver, onScoreChange, onLivesChange, level: levelProp, gravityMultiplier = 1.0, frozen = false }) {
   const canvasRef = useRef(null);
@@ -142,20 +142,24 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
           if (podPos && restartPos) break;
         }
 
+        // Remove the 'm' pod marker tile from the layout: in the tileset it renders
+        // as a ball AND its char code (109) counts as a wall, which made the pod
+        // explode the moment it left the holder. The pod + holder are drawn separately.
+        const cleanedLayout = layout.map(row => row.replace(/m/g, ' '));
+
         console.log('[LEVEL] Loaded level1:', layout.length, 'rows x', lenx, 'cols');
         console.log('[POD] Position:', podPos);
         console.log('[RESTART] Position:', restartPos);
         console.log('[BUNKERS] Count:', bunkerPositions.length);
         console.log('[BUTTONS] Count:', buttonPositions.length);
         console.log('[SLIDERS] Count:', sliderPositions.length);
-        setLevel({ layout, width: lenx, height: layout.length });
+        setLevel({ layout: cleanedLayout, width: lenx, height: cleanedLayout.length });
         setPodPosition(podPos);
-        setPodStartPosition(podPos);
         setRestartPosition(restartPos);
         if (podPos) {
-          // Offset pod position slightly to avoid collision with holder
+          // Pod sits a bit ABOVE the holder marker to avoid colliding with it
           const podX = podPos.x;
-          const podY = podPos.y - 8;
+          const podY = podPos.y - POD_HOLDER_OFFSET;
           setPod(new Pod(podX, podY));
           setPodStartPosition({ x: podX, y: podY });
         }
@@ -448,6 +452,7 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         if (!podExploded && gameState === 'playing' && !pod.onHolder) {
           const podCollision = collision.current.checkPodCollision(pod, level);
           if (podCollision.collided) {
+            console.log('[POD_COLLISION] Pod hit wall tile:', podCollision.tile, 'at', podCollision.point, 'podPos:', { x: pod.x, y: pod.y });
             // Pod explodes first, ship follows 0.5s later (see explosion timer above)
             setPodExploded(true);
             setPodExplosionTime(performance.now());
@@ -881,6 +886,36 @@ export default function GameCanvas({ width = 800, height = 600, onFuelChange, on
         
         ctx.restore();
       });
+
+      // Draw the pod holder (a simple metal cradle, no transparent ball)
+      if (podPosition) {
+        const hx = podPosition.x - camera.x;
+        const hy = podPosition.y - camera.y;
+        ctx.save();
+        ctx.strokeStyle = '#9aa0a6';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        // Base bar
+        ctx.beginPath();
+        ctx.moveTo(hx - 10, hy + 6);
+        ctx.lineTo(hx + 10, hy + 6);
+        ctx.stroke();
+        // Two cradle arms reaching up to hold the pod
+        ctx.beginPath();
+        ctx.moveTo(hx - 9, hy + 6);
+        ctx.lineTo(hx - 7, hy - 6);
+        ctx.moveTo(hx + 9, hy + 6);
+        ctx.lineTo(hx + 7, hy - 6);
+        ctx.stroke();
+        // Two short support legs
+        ctx.beginPath();
+        ctx.moveTo(hx - 6, hy + 6);
+        ctx.lineTo(hx - 6, hy + 12);
+        ctx.moveTo(hx + 6, hy + 6);
+        ctx.lineTo(hx + 6, hy + 12);
+        ctx.stroke();
+        ctx.restore();
+      }
 
       // Draw pod with camera offset
       if (pod && pod.active) {
