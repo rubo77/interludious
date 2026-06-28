@@ -171,6 +171,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [fireActive, setFireActive] = useState(false); // fire button pressed
   const [rotateLeftActive, setRotateLeftActive] = useState(false); // rotate left button pressed
   const [rotateRightActive, setRotateRightActive] = useState(false); // rotate right button pressed
+  // Track pointerId to button type mapping for multi-touch support
+  const pointerButtonMap = useRef(new Map());
   // Virtual joystick control (touch/mouse anywhere on screen)
   const [joystickActive, setJoystickActive] = useState(false);
   const [joystickStart, setJoystickStart] = useState({ x: 0, y: 0 });
@@ -250,6 +252,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       const btn = getButtonAt(e.clientX, e.clientY);
       if (btn) {
         e.preventDefault();
+        pointerButtonMap.current.set(e.pointerId, btn.type);
         switch (btn.type) {
           case 'pod': setTouchActive(true); break;
           case 'thrust': setThrustActive(true); break;
@@ -285,14 +288,26 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       }
     };
 
-    const handlePointerUp = () => {
-      setTouchActive(false);
-      setThrustActive(false);
-      setFireActive(false);
-      setRotateLeftActive(false);
-      setRotateRightActive(false);
-      setJoystickActive(false);
-      setJoystickRotationSpeed(0);
+    const handlePointerUp = (e) => {
+      // Only reset joystick states when joystick is active
+      if (joystickActive) {
+        setJoystickActive(false);
+        setJoystickRotationSpeed(0);
+        setThrustActive(false);
+      } else {
+        // Get the button type for this pointerId and deactivate it
+        const buttonType = pointerButtonMap.current.get(e.pointerId);
+        if (buttonType) {
+          pointerButtonMap.current.delete(e.pointerId);
+          switch (buttonType) {
+            case 'pod': setTouchActive(false); break;
+            case 'thrust': setThrustActive(false); break;
+            case 'fire': setFireActive(false); break;
+            case 'rotateLeft': setRotateLeftActive(false); break;
+            case 'rotateRight': setRotateRightActive(false); break;
+          }
+        }
+      }
     };
 
     canvas.addEventListener('pointerdown', handlePointerDown);
