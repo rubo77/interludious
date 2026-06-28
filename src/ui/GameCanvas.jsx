@@ -16,7 +16,7 @@ import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHE
 const HUD_CLIENT_PX = 50;
 
 // Client-space gap (in screen pixels) kept above the canvas bottom edge for the
-// bottom touch buttons (thrust/POD), so the gap does not "wander" when the canvas
+// bottom touch buttons (accelerate/POD), so the gap does not "wander" when the canvas
 // is scaled to different screen sizes.
 const BOTTOM_GAP_CLIENT_PX = 20;
 
@@ -45,14 +45,14 @@ function getTouchButtonRects(w, h, ratio, topOffset = 0, bottomGap = 10, showTou
       { type: 'pod', x: w - bw - 10, y, w: bw, h: bh, label: 'POD', font: '14px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)' }
     );
   } else {
-    // Bottom POD button: same height as thrust buttons (btnSize)
+    // Bottom POD button: same height as accelerate buttons (btnSize)
     const podWidth = w - 2 * (btnSize + margin * 2);
     buttons.push(
       { type: 'pod', x: btnSize + margin * 2, y: h - btnSize - bottomGap, w: podWidth, h: btnSize, label: 'POD (Traktorstrahl)', font: '16px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)' }
     );
   }
 
-  // Thrust buttons (bottom corners) - only visible when showTouchButtons is true
+  // Accelerate buttons (bottom corners) - only visible when showTouchButtons is true
   if (showTouchButtons) {
     buttons.push(
       { type: 'thrust', x: margin, y: bottomBtnY, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)' },
@@ -171,7 +171,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [ship] = useState(() => new Ship(width / 2, height / 2));
   const [keys, setKeys] = useState({});
   const [touchActive, setTouchActive] = useState(false); // tractor-beam touch button pressed
-  const [thrustActive, setThrustActive] = useState(false); // thrust button pressed
+  const [accelerateActive, setAccelerateActive] = useState(false); // accelerate button pressed
   const [fireActive, setFireActive] = useState(false); // fire button pressed
   const [rotateLeftActive, setRotateLeftActive] = useState(false); // rotate left button pressed
   const [rotateRightActive, setRotateRightActive] = useState(false); // rotate right button pressed
@@ -273,14 +273,14 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         if (joystickActive && joystickPointerId.current === e.pointerId) {
           setJoystickActive(false);
           setJoystickRotationSpeed(0);
-          setThrustActive(false);
+          setAccelerateActive(false);
           joystickPointerId.current = null;
         }
         pointerButtonMap.current.set(e.pointerId, btn.type);
         buttonPointerIds.current.add(e.pointerId);
         switch (btn.type) {
           case 'pod': setTouchActive(true); setShieldActive(true); break;
-          case 'thrust': setThrustActive(true); break;
+          case 'thrust': setAccelerateActive(true); break;
           case 'fire': setFireActive(true); break;
           case 'rotateLeft': setRotateLeftActive(true); break;
           case 'rotateRight': setRotateRightActive(true); break;
@@ -308,11 +308,11 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       } else {
         setJoystickRotationSpeed(0);
       }
-      // Vertical movement: thrust up
+      // Vertical movement: accelerate up
       if (dy < -JOYSTICK_THRESHOLD) {
-        setThrustActive(true);
+        setAccelerateActive(true);
       } else {
-        setThrustActive(false);
+        setAccelerateActive(false);
       }
     };
 
@@ -321,7 +321,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       if (joystickActive && joystickPointerId.current === e.pointerId) {
         setJoystickActive(false);
         setJoystickRotationSpeed(0);
-        setThrustActive(false);
+        setAccelerateActive(false);
         joystickPointerId.current = null;
       } else {
         // Get the button type for this pointerId and deactivate it
@@ -331,7 +331,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           buttonPointerIds.current.delete(e.pointerId);
           switch (buttonType) {
             case 'pod': setTouchActive(false); setShieldActive(false); break;
-            case 'thrust': setThrustActive(false); break;
+            case 'thrust': setAccelerateActive(false); break;
             case 'fire': setFireActive(false); break;
             case 'rotateLeft': setRotateLeftActive(false); break;
             case 'rotateRight': setRotateRightActive(false); break;
@@ -566,7 +566,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       particleSystem.current.spawnExplosion(ship.x, ship.y, 30, '#00ff00');
       setScreenShake({ x: 0, y: 0, intensity: 15 });
       ship.setVelocity(0, 0);
-      ship.setThrust(false);
+      ship.setAccelerate(false);
       // Start ~1s death animation (60 frames at 60fps)
       deathAnim.current = { active: true, timeLeft: 60 };
     };
@@ -628,14 +628,14 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
             ship.rotateRight();
           }
         }
-        if (keys['ArrowUp'] || keys['w'] || keys['W'] || thrustActive) {
-          ship.setThrust(true);
-          // Spawn thrust particles
-          const thrustX = ship.x - Math.sin(ship.angle) * 15;
-          const thrustY = ship.y + Math.cos(ship.angle) * 15;
-          particleSystem.current.spawnThrust(thrustX, thrustY, ship.angle);
+        if (keys['ArrowUp'] || keys['w'] || keys['W'] || accelerateActive) {
+          ship.setAccelerate(true);
+          // Spawn accelerate particles
+          const accelerateX = ship.x - Math.sin(ship.angle) * 15;
+          const accelerateY = ship.y + Math.cos(ship.angle) * 15;
+          particleSystem.current.spawnAccelerate(accelerateX, accelerateY, ship.angle);
         } else {
-          ship.setThrust(false);
+          ship.setAccelerate(false);
         }
       }
 
@@ -1083,8 +1083,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         ctx.closePath();
         ctx.fill();
 
-        // Thrust flame
-        if (ship.thrust > 0) {
+        // Accelerate flame
+        if (ship.accelerate > 0) {
           ctx.fillStyle = '#ff6600';
           ctx.beginPath();
           ctx.moveTo(-5, 10);
@@ -1305,7 +1305,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         let active = false;
         switch (btn.type) {
           case 'pod': active = touchActive; break;
-          case 'thrust': active = thrustActive; break;
+          case 'thrust': active = accelerateActive; break;
           case 'fire': active = fireActive; break;
           case 'rotateLeft': active = rotateLeftActive; break;
           case 'rotateRight': active = rotateRightActive; break;

@@ -26,7 +26,7 @@ A modern, smooth, and anti-aliased space game built with React, Vite, and HTML5 
 
 | Key | Action |
 |-----|--------|
-| ↑ / W | Thrust |
+| ↑ / W | Accelerate |
 | ← / A | Rotate Left |
 | → / D | Rotate Right |
 | Space / Ctrl | Tractor Beam / Pod |
@@ -54,8 +54,8 @@ Works with mouse and touch: starting from the touch point, moving right rotates 
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/thrust.git
-cd thrust
+git clone https://github.com/yourusername/interludious.git
+cd interludious
 
 # Install dependencies
 npm install
@@ -86,7 +86,7 @@ The goal is to fly your ship through each level, pick up the pod using your trac
 
 - **Bunkers**: Enemy bunkers shoot bullets at your ship
 - **Gravity**: Your ship is affected by gravity
-- **Fuel**: Thrust consumes fuel - collect fuel pickups to replenish
+- **Fuel**: Acceleration consumes fuel - collect fuel pickups to replenish
 - **Walls**: Collision with walls causes damage
 
 ## Tech Stack

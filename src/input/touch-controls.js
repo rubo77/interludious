@@ -5,7 +5,7 @@ export class TouchControls {
     this.joystickActive = false;
     this.joystickCenter = { x: 0, y: 0 };
     this.joystickPosition = { x: 0, y: 0 };
-    this.thrustActive = false;
+    this.accelerateActive = false;
     this.listeners = [];
   }
 
@@ -70,12 +70,12 @@ export class TouchControls {
       this.joystickActive = false;
     }
 
-    // Find right side touches for thrust
+    // Find right side touches for accelerate
     const rightTouches = Array.from(this.touches.values()).filter(
       t => t.startX >= window.innerWidth / 2
     );
 
-    this.thrustActive = rightTouches.length > 0;
+    this.accelerateActive = rightTouches.length > 0;
 
     this.notifyListeners();
   }
@@ -98,7 +98,7 @@ export class TouchControls {
   }
 
   isAccelerating() {
-    return this.thrustActive;
+    return this.accelerateActive;
   }
 
   addListener(callback) {
@@ -109,7 +109,7 @@ export class TouchControls {
     const state = {
       joystickActive: this.joystickActive,
       joystickDelta: this.getJoystickDelta(),
-      thrustActive: this.thrustActive
+      accelerateActive: this.accelerateActive
     };
     this.listeners.forEach(callback => callback(state));
   }

@@ -46,7 +46,7 @@ export default function HamburgerMenu({ isOpen, onClose, levelButtons, onBackToM
 
       <h3 style={{ margin: '0 0 10px 0', color: '#fff', fontWeight: '600', fontSize: '14px' }}>CONTROLS</h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', color: '#aaa', marginBottom: '20px' }}>
-        <div><span style={{ color: '#fff' }}>↑ / W</span> - Thrust</div>
+        <div><span style={{ color: '#fff' }}>↑ / W</span> - Accelerate</div>
         <div><span style={{ color: '#fff' }}>← / A</span> - Rotate Left</div>
         <div><span style={{ color: '#fff' }}>→ / D</span> - Rotate Right</div>
         <div><span style={{ color: '#fff' }}>Space / Ctrl</span> - Tractor Beam</div>

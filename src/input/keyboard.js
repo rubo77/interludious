@@ -4,7 +4,7 @@ export class KeyboardInput {
     this.keys = {
       left: false,
       right: false,
-      thrust: false
+      accelerate: false
     };
     this.listeners = [];
   }
@@ -27,7 +27,7 @@ export class KeyboardInput {
       case 'ArrowUp':
       case 'KeyW':
       case 'Space':
-        this.keys.thrust = true;
+        this.keys.accelerate = true;
         break;
     }
     this.notifyListeners();
@@ -46,7 +46,7 @@ export class KeyboardInput {
       case 'ArrowUp':
       case 'KeyW':
       case 'Space':
-        this.keys.thrust = false;
+        this.keys.accelerate = false;
         break;
     }
     this.notifyListeners();

@@ -13,12 +13,12 @@ function App() {
   const [level, setLevel] = useState(1);
   const [fuel, setFuel] = useState(100);
   const [completedLevels, setCompletedLevels] = useState(() => {
-    const stored = localStorage.getItem('thrust_completedLevels');
+    const stored = localStorage.getItem('interludious_completedLevels');
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showTouchButtons, setShowTouchButtons] = useState(() => {
-    const stored = localStorage.getItem('thrust_showTouchButtons');
+    const stored = localStorage.getItem('interludious_showTouchButtons');
     if (stored !== null) {
       return JSON.parse(stored);
     }
@@ -28,7 +28,7 @@ function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem('thrust_showTouchButtons', JSON.stringify(showTouchButtons));
+    localStorage.setItem('interludious_showTouchButtons', JSON.stringify(showTouchButtons));
   }, [showTouchButtons]);
 
   const [gravityMultiplier, setGravityMultiplier] = useState(1.0);
@@ -82,7 +82,7 @@ function App() {
 
   // Persist completedLevels to localStorage
   useEffect(() => {
-    localStorage.setItem('thrust_completedLevels', JSON.stringify([...completedLevels]));
+    localStorage.setItem('interludious_completedLevels', JSON.stringify([...completedLevels]));
   }, [completedLevels]);
 
   // Generate level buttons (DRY: used by hamburger menu)
