@@ -17,13 +17,15 @@ function App() {
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+  });
   const [showTouchButtons, setShowTouchButtons] = useState(() => {
     const stored = localStorage.getItem('interludious_showTouchButtons');
     if (stored !== null) {
       return JSON.parse(stored);
     }
     // Default: on for mobile, off for laptop
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
     return isMobile;
   });
 
@@ -223,6 +225,7 @@ function App() {
                 gravityMultiplier={gravityMultiplier}
                 frozen={gameState === 'gameover' || gameState === 'levelcomplete'}
                 showTouchButtons={showTouchButtons}
+                isMobile={isMobile}
               />
 
               {/* Game over overlay - centered over canvas */}
