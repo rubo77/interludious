@@ -10,7 +10,7 @@ describe('Menu Component', () => {
 
   it('should render subtitle', () => {
     render(<Menu onStart={() => {}} />);
-    expect(screen.getByText('A MODERN TAKE ON THE CLASSIC THRUST')).toBeInTheDocument();
+    expect(screen.getByText('A MODERN SPACE GAME')).toBeInTheDocument();
   });
 
   it('should render start button', () => {

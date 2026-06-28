@@ -79,6 +79,15 @@ export default function Menu({ onStart, levelButtons, onBackToMenu, appVersion, 
         }}>
           INTERLUDIOUS
         </h1>
+        <p style={{
+          fontSize: 'clamp(12px, 3vw, 18px)',
+          fontWeight: '400',
+          margin: '0',
+          color: '#aaa',
+          letterSpacing: '1px',
+        }}>
+          A MODERN SPACE GAME
+        </p>
         <button
           onClick={onStart}
           style={{
