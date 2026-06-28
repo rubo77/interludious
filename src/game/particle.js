@@ -1,4 +1,4 @@
-// Particle - Visual effect for explosions, thrust, sparks
+// Particle - Visual effect for explosions, acceleration, sparks
 export class Particle {
   constructor(x, y, vx, vy, color, size, lifetime) {
     this.x = x;

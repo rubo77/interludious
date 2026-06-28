@@ -12,7 +12,7 @@ export class SoundManager {
       shield: null,
       tractor: null
     };
-    this.currentThrustSound = null;
+    this.currentAccelerateSound = null;
   }
 
   async init() {
@@ -26,16 +26,16 @@ export class SoundManager {
     }
   }
 
-  playThrust() {
-    if (this.currentThrustSound) return; // Already playing
+  playAccelerate() {
+    if (this.currentAccelerateSound) return; // Already playing
     
-    this.currentThrustSound = this.engine.playSound('thrust', 0.3, true);
+    this.currentAccelerateSound = this.engine.playSound('thrust', 0.3, true);
   }
 
-  stopThrust() {
-    if (this.currentThrustSound) {
-      this.engine.stopSound(this.currentThrustSound);
-      this.currentThrustSound = null;
+  stopAccelerate() {
+    if (this.currentAccelerateSound) {
+      this.engine.stopSound(this.currentAccelerateSound);
+      this.currentAccelerateSound = null;
     }
   }
 

@@ -59,7 +59,7 @@ export class LevelRenderer {
         ctx.fillRect(x + 1, y + 1, this.tileSize - 2, this.tileSize - 2);
         break;
 
-      // Thrust platform tiles (p, q, r, s, t - different heights)
+      // Accelerate platform tiles (p, q, r, s, t - different heights)
       case 'p': // Platform - lowest
         ctx.fillStyle = '#888888';
         ctx.fillRect(x, y + this.tileSize - 2, this.tileSize, 2);

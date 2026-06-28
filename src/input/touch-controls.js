@@ -97,7 +97,7 @@ export class TouchControls {
     return { x: dx, y: dy };
   }
 
-  isThrusting() {
+  isAccelerating() {
     return this.thrustActive;
   }
 

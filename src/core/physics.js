@@ -1,5 +1,5 @@
-// Physics engine ported from thrust.c
-import { GRAVITY, THRUST_POWER, ROTATION_SPEED, MAX_SPEED, FRICTION } from './constants.js';
+// Physics engine ported from C code
+import { GRAVITY, ACCELERATE_POWER, ROTATION_SPEED, MAX_SPEED, FRICTION } from './constants.js';
 
 export class Ship {
   constructor(x, y) {
@@ -8,7 +8,7 @@ export class Ship {
     this.vx = 0;
     this.vy = 0;
     this.angle = 0; // Radians
-    this.thrusting = false;
+    this.accelerating = false;
     this.rotatingLeft = false;
     this.rotatingRight = false;
   }
@@ -22,10 +22,10 @@ export class Ship {
       this.angle += ROTATION_SPEED;
     }
 
-    // Apply thrust
-    if (this.thrusting) {
-      this.vx += Math.cos(this.angle) * THRUST_POWER;
-      this.vy += Math.sin(this.angle) * THRUST_POWER;
+    // Apply acceleration
+    if (this.accelerating) {
+      this.vx += Math.cos(this.angle) * ACCELERATE_POWER;
+      this.vy += Math.sin(this.angle) * ACCELERATE_POWER;
     }
 
     // Apply gravity

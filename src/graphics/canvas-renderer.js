@@ -29,8 +29,8 @@ export class CanvasRenderer {
     this.ctx.fillStyle = '#fff';
     this.ctx.fill();
 
-    // Draw engine flame if thrusting
-    if (ship.thrusting) {
+    // Draw engine flame if accelerating
+    if (ship.accelerating) {
       this.ctx.beginPath();
       this.ctx.moveTo(-8, -3);
       this.ctx.lineTo(-15, 0);

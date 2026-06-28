@@ -9,7 +9,7 @@ export class Ship {
     this.vy = 0;
     this.angle = 0; // radians
     this.rotation = 0; // degrees
-    this.thrust = 0;
+    this.accelerate = 0;
     this.fuel = 100;
   }
 
@@ -17,11 +17,11 @@ export class Ship {
     // Apply gravity (10% stronger, multiplied by difficulty multiplier)
     this.vy += gravity * gravityMultiplier * dt;
 
-    // Apply thrust
-    if (this.thrust > 0) {
-      const thrustPower = 0.3 * dt;
-      this.vx += Math.sin(this.angle) * thrustPower;
-      this.vy -= Math.cos(this.angle) * thrustPower;
+    // Apply acceleration
+    if (this.accelerate > 0) {
+      const acceleratePower = 0.3 * dt;
+      this.vx += Math.sin(this.angle) * acceleratePower;
+      this.vy -= Math.cos(this.angle) * acceleratePower;
       this.fuel -= 0.1 * dt;
     }
 
@@ -52,8 +52,8 @@ export class Ship {
     this.rotation = (angle * 180 / Math.PI) % 360;
   }
 
-  setThrust(thrusting) {
-    this.thrust = thrusting ? 1 : 0;
+  setAccelerate(accelerating) {
+    this.accelerate = accelerating ? 1 : 0;
   }
 
   setPosition(x, y) {

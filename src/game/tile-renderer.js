@@ -1,4 +1,4 @@
-// Tile renderer using original dulsi/thrust blks tileset
+// Tile renderer using original blks tileset
 // Renders level tiles pixel-perfect using the original 8x8 pixel tileset and color palette
 export class TileRenderer {
   constructor() {

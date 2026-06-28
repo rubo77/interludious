@@ -18,13 +18,13 @@ export class ParticleSystem {
     }
   }
 
-  spawnThrust(x, y, angle, count = 3) {
+  spawnAccelerate(x, y, angle, count = 3) {
     for (let i = 0; i < count; i++) {
       const spread = (Math.random() - 0.5) * 0.5;
-      const thrustAngle = angle + Math.PI + spread;
+      const accelerateAngle = angle + Math.PI + spread;
       const speed = Math.random() * 2 + 1;
-      const vx = Math.cos(thrustAngle) * speed;
-      const vy = Math.sin(thrustAngle) * speed;
+      const vx = Math.cos(accelerateAngle) * speed;
+      const vy = Math.sin(accelerateAngle) * speed;
       const size = Math.random() * 3 + 1;
       const lifetime = Math.random() * 15 + 10;
       this.particles.push(new Particle(x, y, vx, vy, '#ff6600', size, lifetime));
