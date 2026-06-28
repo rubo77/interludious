@@ -100,7 +100,7 @@ export class TileRenderer {
   isWall(tile) {
     if (tile === ' ' || tile === undefined || tile === null) return false;
     const code = tile.charCodeAt(0);
-    // In original Thrust, characters 76-108 (L-l range) are solid landscape
+    // Characters 76-108 (L-l range) are solid landscape
     // Platform tiles p-t (112-116) and many landscape chars are solid
     // Empty space is ' ' (32), '*' restart, and object markers
     // Solid: landscape tiles (uppercase letters and lowercase a-z used for terrain)
