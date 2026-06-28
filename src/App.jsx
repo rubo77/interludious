@@ -4,9 +4,7 @@ import GameCanvas from './ui/GameCanvas';
 import OverlayMessage from './ui/OverlayMessage';
 import HamburgerMenu from './ui/HamburgerMenu';
 import { SCORE_LEVEL_COMPLETE } from './core/constants.js';
-
-// Read version from package.json dynamically
-const APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.0';
+import { APP_VERSION } from './version.js';
 
 function App() {
   const [gameState, setGameState] = useState('menu'); // Start with menu screen

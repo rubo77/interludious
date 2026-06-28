@@ -1,6 +1,6 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { readFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
@@ -11,11 +11,12 @@ const __dirname = dirname(__filename)
 const packageJson = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf-8'))
 const APP_VERSION = packageJson.version
 
+// Write version to src/version.js
+const versionFilePath = join(__dirname, 'src/version.js')
+writeFileSync(versionFilePath, `// Read version from package.json\n// This file is generated during build to include the current version\nexport const APP_VERSION = '${APP_VERSION}';\n`)
+
 export default defineConfig({
   plugins: [react()],
-  define: {
-    'import.meta.env.VITE_APP_VERSION': JSON.stringify(APP_VERSION)
-  },
   test: {
     globals: true,
     environment: 'jsdom',
