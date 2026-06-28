@@ -48,7 +48,7 @@ describe('Canvas Renderer', () => {
     const ship = {
       getPosition: () => ({ x: 100, y: 100 }),
       getAngle: () => 0,
-      thrusting: false
+      accelerating: false
     };
     renderer.drawShip(ship);
     expect(mockCtx.save).toHaveBeenCalled();
@@ -61,17 +61,17 @@ describe('Canvas Renderer', () => {
     const ship = {
       getPosition: () => ({ x: 100, y: 100 }),
       getAngle: () => Math.PI / 2,
-      thrusting: false
+      accelerating: false
     };
     renderer.drawShip(ship);
     expect(mockCtx.rotate).toHaveBeenCalledWith(Math.PI / 2);
   });
 
-  it('should draw engine flame when thrusting', () => {
+  it('should draw engine flame when accelerating', () => {
     const ship = {
       getPosition: () => ({ x: 100, y: 100 }),
       getAngle: () => 0,
-      thrusting: true
+      accelerating: true
     };
     renderer.drawShip(ship);
     expect(mockCtx.fillStyle).toBe('#ff0'); // Flame color
@@ -94,7 +94,7 @@ describe('Canvas Renderer', () => {
     const ship = {
       getPosition: () => ({ x: 100, y: 100 }),
       getAngle: () => 0,
-      thrusting: false
+      accelerating: false
     };
     const level = {
       layout: ['****']

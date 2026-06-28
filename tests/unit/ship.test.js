@@ -36,12 +36,12 @@ describe('Ship', () => {
     expect(ship.angle).toBe(0.1);
   });
 
-  it('should set thrust', () => {
+  it('should set accelerate', () => {
     const ship = new Ship(100, 200);
-    ship.setThrust(true);
-    expect(ship.thrust).toBe(1);
-    ship.setThrust(false);
-    expect(ship.thrust).toBe(0);
+    ship.setAccelerate(true);
+    expect(ship.accelerate).toBe(1);
+    ship.setAccelerate(false);
+    expect(ship.accelerate).toBe(0);
   });
 
   it('should apply gravity on update', () => {
