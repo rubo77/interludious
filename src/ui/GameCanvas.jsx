@@ -175,6 +175,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const pointerButtonMap = useRef(new Map());
   // Track pointerIds that are currently pressing buttons (for joystick filtering)
   const buttonPointerIds = useRef(new Set());
+  // Track the pointerId that is currently controlling the joystick
+  const joystickPointerId = useRef(null);
   // Shield state
   const [shieldActive, setShieldActive] = useState(false);
   // Virtual joystick control (touch/mouse anywhere on screen)
@@ -264,11 +266,12 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       const btn = getButtonAt(e.clientX, e.clientY);
       if (btn) {
         e.preventDefault();
-        // Deactivate joystick if any button is pressed
-        if (joystickActive) {
+        // Deactivate joystick only if the same pointerId is pressing a button
+        if (joystickActive && joystickPointerId.current === e.pointerId) {
           setJoystickActive(false);
           setJoystickRotationSpeed(0);
           setThrustActive(false);
+          joystickPointerId.current = null;
         }
         pointerButtonMap.current.set(e.pointerId, btn.type);
         buttonPointerIds.current.add(e.pointerId);
@@ -280,10 +283,11 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           case 'rotateRight': setRotateRightActive(true); break;
         }
       } else {
-        // Virtual joystick: activate anywhere on screen, but only if no buttons are pressed
-        if (buttonPointerIds.current.size === 0) {
+        // Virtual joystick: activate anywhere on screen, but only if this pointerId is not pressing a button
+        if (!buttonPointerIds.current.has(e.pointerId)) {
           e.preventDefault();
           setJoystickActive(true);
+          joystickPointerId.current = e.pointerId;
           setJoystickStart({ x: e.clientX, y: e.clientY });
         }
       }
@@ -310,11 +314,12 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
     };
 
     const handlePointerUp = (e) => {
-      // Only reset joystick states when joystick is active
-      if (joystickActive) {
+      // Only reset joystick states when joystick is active and this pointerId is controlling it
+      if (joystickActive && joystickPointerId.current === e.pointerId) {
         setJoystickActive(false);
         setJoystickRotationSpeed(0);
         setThrustActive(false);
+        joystickPointerId.current = null;
       } else {
         // Get the button type for this pointerId and deactivate it
         const buttonType = pointerButtonMap.current.get(e.pointerId);
