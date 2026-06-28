@@ -264,6 +264,12 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       const btn = getButtonAt(e.clientX, e.clientY);
       if (btn) {
         e.preventDefault();
+        // Deactivate joystick if any button is pressed
+        if (joystickActive) {
+          setJoystickActive(false);
+          setJoystickRotationSpeed(0);
+          setThrustActive(false);
+        }
         pointerButtonMap.current.set(e.pointerId, btn.type);
         buttonPointerIds.current.add(e.pointerId);
         switch (btn.type) {
@@ -274,8 +280,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           case 'rotateRight': setRotateRightActive(true); break;
         }
       } else {
-        // Virtual joystick: activate anywhere on screen, but ignore if pointerId is pressing a button
-        if (!buttonPointerIds.current.has(e.pointerId)) {
+        // Virtual joystick: activate anywhere on screen, but only if no buttons are pressed
+        if (buttonPointerIds.current.size === 0) {
           e.preventDefault();
           setJoystickActive(true);
           setJoystickStart({ x: e.clientX, y: e.clientY });
