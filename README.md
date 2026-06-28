@@ -32,6 +32,10 @@ A modern, smooth, and anti-aliased web port of the classic Thrust game, built wi
 | Space / Ctrl | Tractor Beam / Pod |
 | X / Shift | Shoot |
 
+### Touch / Joystick Control
+
+Works with mouse and touch: starting from the touch point, moving right rotates the ship right, moving left rotates left, moving up accelerates.
+
 ### Game Over Screen
 
 | Key | Action |
