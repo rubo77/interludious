@@ -1,7 +1,7 @@
-# Thrust Cross-Platform Porting Plan
+# Interludious Cross-Platform Porting Plan
 
 ## Overview
-Port the dulsi/thrust C64 clone to a modern web application using HTML5 Canvas + JavaScript, with native iOS and Android app support via Capacitor. Maximize code reuse from the existing C codebase.
+Port the space game to a modern web application using HTML5 Canvas + JavaScript, with native iOS and Android app support via Capacitor. Maximize code reuse from the existing C codebase.
 
 ## Architecture
 
@@ -21,7 +21,7 @@ Port the dulsi/thrust C64 clone to a modern web application using HTML5 Canvas +
 /var/www/Thrust/
 ├── src/
 │   ├── core/
-│   │   ├── physics.js        # Ported from thrust.c (gravity, thrust, inertia)
+│   │   ├── physics.js        # Ported from C code (gravity, thrust, inertia)
 │   │   ├── level-parser.js   # Ported from level.c (def file parsing)
 │   │   ├── game-objects.js   # Ported from things.c (bunkers, buttons, sliders)
 │   │   └── collision.js      # Ported collision detection
@@ -39,7 +39,7 @@ Port the dulsi/thrust C64 clone to a modern web application using HTML5 Canvas +
 │   ├── game/
 │   │   ├── game-loop.js      # requestAnimationFrame loop
 │   │   ├── game-state.js     # Score, lives, level progression
-│   │   └── constants.js      # Game constants (port from thrust_t.h)
+│   │   └── constants.js      # Game constants (port from C code)
 │   ├── levels/
 │   │   ├── level-parser.js   # Parse level files (def/JSON)
 │   │   ├── level-validator.js # Validate level syntax and structure
@@ -97,7 +97,7 @@ The ASCII-based level format is perfect for web:
 - `m` → Pod position
 
 ### 2. Physics Engine (90% Reuse)
-**Source**: `src/thrust.c`
+**Source**: C code
 
 Port these core physics functions to JavaScript:
 - Ship movement (x, y, vx, vy with gravity)
@@ -105,7 +105,7 @@ Port these core physics functions to JavaScript:
 - Collision detection (insideblock, pixel-perfect)
 - Pod towing physics (loadcontact, loadpoint)
 
-**Constants to port** (from `thrust_t.h`):
+**Constants to port** (from C code):
 - BBILDX, BBILDY (block dimensions)
 - maxlenx, maxleny (max level size)
 - Gravity constant
@@ -127,7 +127,7 @@ Port these structures and functions:
 - `bunkerfirebullet()`, `hit()`, `explodething()`
 
 ### 4. Game Logic (80% Reuse)
-**Source**: `src/thrust.c`, `src/level.c`
+**Source**: C code
 
 Port:
 - Game state variables (score, lives, fuel, shield)

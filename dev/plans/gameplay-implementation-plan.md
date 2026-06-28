@@ -4,7 +4,7 @@
 - ✅ Phase 1-10: All original phases completed
 - ✅ UI Implementation: Menu, HUD, GameCanvas components
 - ✅ Ship Implementation: Physics, rendering, keyboard control
-- ✅ Level Rendering: Original Thrust tileset with pixel-perfect rendering
+- ✅ Level Rendering: Original tileset with pixel-perfect rendering
 - ✅ Level Loading: Original .def files imported
 - ✅ High Score System: localStorage persistence
 - ✅ Playwright E2E: Tests configured
@@ -32,7 +32,7 @@
    - Add camera damping for smooth transitions
 4. Smooth ship rotation
    - Add rotation interpolation
-   - Smooth thrust animation
+   - Smooth acceleration animation
 5. Commit: Anti-aliased smooth rendering
 
 **Files to modify**:
@@ -193,5 +193,5 @@
 - ✅ Particle effects for explosions and thrust
 - ✅ Modern, sleek UI design
 - ✅ Game feels smooth and responsive
-- ✅ All original Thrust features implemented
+- ✅ All original features implemented
 - ✅ Modern visual polish throughout

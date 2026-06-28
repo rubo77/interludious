@@ -1,5 +1,5 @@
 #!/bin/bash
-# Mobile build script for Thrust
+# Mobile build script for Interludious
 # Prepares the web app and syncs with Capacitor for Android Studio
 # Usage: bash dev/mobile-build.sh [options] [platform]
 
@@ -12,7 +12,7 @@ PLATFORM="android"
 
 # Show help information
 show_help() {
-  echo "\nThrust Mobile Build Script\n"
+  echo "\nInterludious Mobile Build Script\n"
   echo "Usage: bash dev/mobile-build.sh [options] [platform]\n"
   echo "Options:"
   echo "  -h, --help                Show this help message"
@@ -109,7 +109,7 @@ fi
 
 # Build the web app (unless sync-only)
 if [ "$FORCE_SYNC" = false ]; then
-  echo "Building Thrust web app for mobile..."
+  echo "Building Interludious web app for mobile..."
   npm run build
 fi
 

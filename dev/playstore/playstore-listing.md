@@ -10,12 +10,12 @@ Interludious - Classic space action game with modern graphics
 
 ## Full Description
 
-Interludious is a modern web port of the classic Thrust game, featuring smooth anti-aliased rendering, particle effects, and responsive design. Navigate your ship through challenging levels, pick up the pod using your tractor beam, and deliver it to the restart point to complete each level.
+Interludious is a modern space game featuring smooth anti-aliased rendering, particle effects, and responsive design. Navigate your ship through challenging levels, pick up the pod using your tractor beam, and deliver it to the restart point to complete each level.
 
 ### Features
 
 - **Modern Graphics**: Smooth anti-aliased rendering with particle effects and screen shake
-- **Complete Gameplay**: All 6 original levels with accurate physics and mechanics
+- **Complete Gameplay**: All 6 levels with accurate physics and mechanics
 - **Pod Towing**: Tractor beam mechanics for picking up and towing the pod
 - **Bunkers & Bullets**: Enemy bunkers that shoot at your ship
 - **Buttons & Sliders**: Interactive level elements
@@ -28,14 +28,14 @@ Interludious is a modern web port of the classic Thrust game, featuring smooth a
 ### Controls
 
 #### Keyboard
-- **↑ / W** - Thrust
+- **↑ / W** - Accelerate
 - **← / A** - Rotate Left
 - **→ / D** - Rotate Right
 - **Space / Ctrl** - Tractor Beam / Pod
 - **X / Shift** - Shoot
 
 #### Touch Controls
-- **Thrust Buttons** - Bottom corners
+- **Accelerate Buttons** - Bottom corners
 - **Rotate Buttons** - Top-left corner
 - **Fire Button** - Top-right corner
 - **POD Button** - Side buttons (landscape) or bottom button (portrait)
@@ -52,7 +52,7 @@ The goal is to fly your ship through each level, pick up the pod using your trac
 #### Hazards
 - **Bunkers**: Enemy bunkers shoot bullets at your ship
 - **Gravity**: Your ship is affected by gravity
-- **Fuel**: Thrust consumes fuel - collect fuel pickups to replenish
+- **Fuel**: Acceleration consumes fuel - collect fuel pickups to replenish
 - **Walls**: Collision with walls causes damage
 
 ### Permissions
@@ -72,4 +72,4 @@ Interludious is a local game that does not collect any personal data. All game d
 
 ---
 
-**Enjoy the modern Thrust experience!** 🚀
+**Enjoy the modern space game experience!** 🚀

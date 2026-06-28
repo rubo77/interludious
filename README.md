@@ -1,8 +1,8 @@
-# Thrust - Modern Web Port
+# Interludious - Modern Space Game
 
-A modern, smooth, and anti-aliased web port of the classic Thrust game, built with React, Vite, and HTML5 Canvas. Features modern graphics with particle effects, smooth camera, and responsive design.
+A modern, smooth, and anti-aliased space game built with React, Vite, and HTML5 Canvas. Features modern graphics with particle effects, smooth camera, and responsive design.
 
-![Thrust](https://img.shields.io/badge/Thrust-Modern%20Port-blue)
+![Interludious](https://img.shields.io/badge/Interludious-Modern%20Space%20Game-blue)
 ![React](https://img.shields.io/badge/React-18.0.0-green)
 ![Vite](https://img.shields.io/badge/Vite-5.0.0-purple)
 ![Vitest](https://img.shields.io/badge/Vitest-1.0.0-yellow)
@@ -10,7 +10,7 @@ A modern, smooth, and anti-aliased web port of the classic Thrust game, built wi
 ## Features
 
 - **Modern Graphics**: Smooth anti-aliased rendering with particle effects and screen shake
-- **Complete Gameplay**: All 6 original levels with accurate physics and mechanics
+- **Complete Gameplay**: All 6 levels with accurate physics and mechanics
 - **Pod Towing**: Tractor beam mechanics for picking up and towing the pod
 - **Bunkers & Bullets**: Enemy bunkers that shoot at your ship
 - **Buttons & Sliders**: Interactive level elements
@@ -101,7 +101,7 @@ The goal is to fly your ship through each level, pick up the pod using your trac
 ## Project Structure
 
 ```
-thrust/
+interludious/
 ├── src/
 │   ├── core/           # Game constants and utilities
 │   ├── game/           # Game objects (Ship, Pod, Bunker, etc.)
@@ -157,20 +157,13 @@ Contributions are welcome! Please follow these guidelines:
 
 ## License
 
-This project is a modern web port of the original Thrust game. The original game rights belong to their respective owners.
-
-## Acknowledgments
-
-- Original Thrust game by Jeremy Smith
-- Modern web port with React and Canvas API
-- Level data from the original Thrust game
+This project is a modern space game. All rights reserved.
 
 ## Credits
 
-- Development: Modern Web Port Team
-- Original Game: Jeremy Smith
-- Level Design: Original Thrust Levels
+- Development: Interludious Team
+- Level Design: Interludious Levels
 
 ---
 
-**Enjoy the modern Thrust experience!** 🚀
+**Enjoy the modern space game experience!** 🚀
