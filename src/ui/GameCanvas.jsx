@@ -768,9 +768,11 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       if (gameState === 'playing') {
         const newBullets = [...bullets];
         bunkers.forEach(bunker => {
-          const shot = bunker.update(deltaTime, ship.x, ship.y);
-          if (shot) {
-            newBullets.push(new Bullet(bunker.x, bunker.y, shot.angle, shot.speed));
+          if (bunker.active) {
+            const shot = bunker.update(deltaTime, ship.x, ship.y);
+            if (shot) {
+              newBullets.push(new Bullet(bunker.x, bunker.y, shot.angle, shot.speed));
+            }
           }
         });
         setBullets(newBullets);
@@ -798,13 +800,15 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
             // Check collision with bunkers
             let bulletHit = false;
             const newBunkers = bunkers.filter(bunker => {
+              if (!bunker.active) return false; // Remove inactive bunkers
               const dx = bullet.x - bunker.x;
               const dy = bullet.y - bunker.y;
               const distance = Math.sqrt(dx * dx + dy * dy);
               if (distance < 20) {
                 bulletHit = true;
+                bunker.active = false; // Mark bunker as inactive
                 setScore(prev => prev + 50);
-                particleSystem.current.spawnExplosion(bunker.x, bunker.y, 10);
+                particleSystem.current.spawnExplosion(bunker.x, bunker.y, 20, '#ff6600');
                 return false; // Remove bunker
               }
               return true;
