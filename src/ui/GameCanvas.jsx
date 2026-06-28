@@ -625,7 +625,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       setPlayerBullets(prev => {
         const newBullets = [...prev];
         // Check if X is pressed or fire button is active and add cooldown logic
-        if (keys['x'] || keys['X'] || keys['Shift'] || keys['ShiftLeft'] || keys['ShiftRight'] || fireActive) {
+        // Prevent shooting while ship is exploding
+        if (!isDying && (keys['x'] || keys['X'] || keys['Shift'] || keys['ShiftLeft'] || keys['ShiftRight'] || fireActive)) {
           // Simple cooldown: only shoot every ~10 frames
           const lastShotTime = newBullets.length > 0 ? newBullets[newBullets.length - 1].time : 0;
           if (performance.now() - lastShotTime > 150) { // 150ms cooldown
