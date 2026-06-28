@@ -37,3 +37,10 @@ export const JOYSTICK_THRESHOLD = 30;
 // Virtual joystick: scale factor for rotation speed based on horizontal movement
 export const JOYSTICK_SPEED_FACTOR = 0.0005;
 
+// Scoring
+export const SCORE_LEVEL_COMPLETE = 100;
+export const SCORE_BUNKER_DESTROYED = 50;
+export const SCORE_BUTTON_SLIDER = 10;
+
+// Shooting
+export const SHOOT_COOLDOWN_MS = 150; // Cooldown between shots in milliseconds

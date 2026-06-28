@@ -3,6 +3,7 @@ import Menu from './ui/Menu';
 import GameCanvas from './ui/GameCanvas';
 import OverlayMessage from './ui/OverlayMessage';
 import HamburgerMenu from './ui/HamburgerMenu';
+import { SCORE_LEVEL_COMPLETE } from './core/constants.js';
 
 const APP_VERSION = '1.0'; // From interludious/app/build.gradle versionName
 
@@ -52,7 +53,7 @@ function App() {
   };
 
   const handleLevelComplete = (completedLevel) => {
-    setScore(prev => prev + 100);
+    setScore(prev => prev + SCORE_LEVEL_COMPLETE);
     setCompletedLevels(prev => new Set([...prev, completedLevel]));
     setGameState('levelcomplete');
   };

@@ -9,7 +9,7 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_SPEED_FACTOR, CAMERA_BOTTOM_OFFSET } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_SPEED_FACTOR, CAMERA_BOTTOM_OFFSET, SCORE_BUNKER_DESTROYED, SCORE_BUTTON_SLIDER, SHOOT_COOLDOWN_MS } from '../core/constants.js';
 
 // Client-space height of the DOM HUD overlay (App.jsx top bar).
 // Used to keep the top touch buttons (fire/rotate) below the HUD in every layout.
@@ -629,7 +629,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         if (!isDying && (keys['x'] || keys['X'] || keys['Shift'] || keys['ShiftLeft'] || keys['ShiftRight'] || fireActive)) {
           // Simple cooldown: only shoot every ~10 frames
           const lastShotTime = newBullets.length > 0 ? newBullets[newBullets.length - 1].time : 0;
-          if (performance.now() - lastShotTime > 150) { // 150ms cooldown
+          if (performance.now() - lastShotTime > SHOOT_COOLDOWN_MS) { // Cooldown between shots
             const bulletSpeed = 8;
             newBullets.push({
               x: ship.x + Math.sin(ship.angle) * 20,
@@ -808,7 +808,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
               if (distance < 20) {
                 bulletHit = true;
                 bunker.active = false; // Mark bunker as inactive
-                setScore(prev => prev + 50);
+                setScore(prev => prev + SCORE_BUNKER_DESTROYED);
                 particleSystem.current.spawnExplosion(bunker.x, bunker.y, 20, '#ff6600');
                 return false; // Remove bunker
               }
@@ -916,8 +916,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
               newRow[shipTileX] = ' ';
               newLayout[shipTileY] = newRow.join('');
               setLevel({ ...level, layout: newLayout });
-              setScore(prev => prev + 10);
-              if (onScoreChange) onScoreChange(score + 10);
+              setScore(prev => prev + SCORE_BUTTON_SLIDER);
+              if (onScoreChange) onScoreChange(score + SCORE_BUTTON_SLIDER);
             }
           }
         }
