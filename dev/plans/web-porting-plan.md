@@ -426,7 +426,7 @@ function gameLoop(timestamp) {
 ```
 
 ### 3. Collision Detection
-Port the pixel-perfect collision from `thrust.c::insideblock()` using Canvas pixel data or bitmask arrays.
+Port the pixel-perfect collision from C code using Canvas pixel data or bitmask arrays.
 
 ### 4. State Management
 Use React for UI state (menus, HUD), but keep game physics in pure JavaScript for performance.
@@ -507,7 +507,7 @@ After each phase, run tests and game to verify:
 2. **Authentic Gameplay**: Physics and level design remain identical to original
 3. **Modern Tech Stack**: React + Canvas for maintainability
 4. **Asset Reuse**: Level files and sprite data can be converted
-5. **Proven Logic**: dulsi/thrust is a mature, bug-free implementation
+5. **Proven Logic**: C code is a mature, bug-free implementation
 6. **Single Codebase**: Web, iOS, and Android from one codebase via Capacitor
 7. **Native Performance**: Capacitor WebView provides near-native performance
 8. **Easy Updates**: Web app updates automatically, native apps via store updates
