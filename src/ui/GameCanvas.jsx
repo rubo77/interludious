@@ -9,7 +9,7 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_SPEED_FACTOR, CAMERA_BOTTOM_OFFSET, SCORE_BUNKER_DESTROYED, SCORE_BUTTON_SLIDER, SHOOT_COOLDOWN_MS } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_SPEED_FACTOR, CAMERA_BOTTOM_OFFSET, SCORE_BUNKER_DESTROYED, SCORE_BUTTON_SLIDER, SHOOT_COOLDOWN_MS, SHIELD_RADIUS, SHIELD_COLOR } from '../core/constants.js';
 
 // Client-space height of the DOM HUD overlay (App.jsx top bar).
 // Used to keep the top touch buttons (fire/rotate) below the HUD in every layout.
@@ -175,6 +175,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const pointerButtonMap = useRef(new Map());
   // Track pointerIds that are currently pressing buttons (for joystick filtering)
   const buttonPointerIds = useRef(new Set());
+  // Shield state
+  const [shieldActive, setShieldActive] = useState(false);
   // Virtual joystick control (touch/mouse anywhere on screen)
   const [joystickActive, setJoystickActive] = useState(false);
   const [joystickStart, setJoystickStart] = useState({ x: 0, y: 0 });
@@ -211,6 +213,10 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   useEffect(() => {
     const handleKeyDown = (e) => {
       setKeys(prev => ({ ...prev, [e.key]: true }));
+      // Activate shield when Space or Ctrl is pressed
+      if (e.key === ' ' || e.key === 'Space' || e.key === 'Control' || e.key === 'ControlLeft' || e.key === 'ControlRight') {
+        setShieldActive(true);
+      }
       // Prevent space from scrolling the page
       if (e.key === ' ' || e.key === 'Space') {
         e.preventDefault();
@@ -219,6 +225,10 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
 
     const handleKeyUp = (e) => {
       setKeys(prev => ({ ...prev, [e.key]: false }));
+      // Deactivate shield when Space or Ctrl is released
+      if (e.key === ' ' || e.key === 'Space' || e.key === 'Control' || e.key === 'ControlLeft' || e.key === 'ControlRight') {
+        setShieldActive(false);
+      }
       // Prevent space from scrolling the page
       if (e.key === ' ' || e.key === 'Space') {
         e.preventDefault();
@@ -257,7 +267,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         pointerButtonMap.current.set(e.pointerId, btn.type);
         buttonPointerIds.current.add(e.pointerId);
         switch (btn.type) {
-          case 'pod': setTouchActive(true); break;
+          case 'pod': setTouchActive(true); setShieldActive(true); break;
           case 'thrust': setThrustActive(true); break;
           case 'fire': setFireActive(true); break;
           case 'rotateLeft': setRotateLeftActive(true); break;
@@ -306,7 +316,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           pointerButtonMap.current.delete(e.pointerId);
           buttonPointerIds.current.delete(e.pointerId);
           switch (buttonType) {
-            case 'pod': setTouchActive(false); break;
+            case 'pod': setTouchActive(false); setShieldActive(false); break;
             case 'thrust': setThrustActive(false); break;
             case 'fire': setFireActive(false); break;
             case 'rotateLeft': setRotateLeftActive(false); break;
@@ -895,6 +905,12 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           const dy = bullet.y - ship.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
           if (distance < 15) {
+            // Ship hit by bullet - check if shield is active
+            if (shieldActive) {
+              // Shield blocks the bullet
+              bullet.active = false;
+              return false;
+            }
             // Ship hit by bullet = destroy ship
             destroyShip();
             return false;
@@ -1065,6 +1081,18 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         }
 
         ctx.restore();
+
+        // Draw shield circle around ship (when pod button is pressed)
+        if (shieldActive) {
+          ctx.save();
+          ctx.translate(ship.x - camera.x, ship.y - camera.y);
+          ctx.beginPath();
+          ctx.arc(0, 0, SHIELD_RADIUS, 0, Math.PI * 2);
+          ctx.strokeStyle = SHIELD_COLOR;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.restore();
+        }
       }
 
       // Draw buttons with camera offset

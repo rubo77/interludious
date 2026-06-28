@@ -44,3 +44,7 @@ export const SCORE_BUTTON_SLIDER = 10;
 
 // Shooting
 export const SHOOT_COOLDOWN_MS = 150; // Cooldown between shots in milliseconds
+
+// Shield
+export const SHIELD_RADIUS = 25; // Radius of the shield circle around the ship
+export const SHIELD_COLOR = 'rgba(0, 255, 255, 0.5)'; // Color of the shield
