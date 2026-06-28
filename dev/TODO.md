@@ -15,3 +15,11 @@
 - [ ] es soll eine extra steuerung geben, die überall auf dem screen funktioniert mit maus der touch: ausgehend von dem punkt wo der touch beginnt, nach rechts soll sich das raumschiff nach rechts drehen und nach links dito. nach oben soll es beschleunigen
 - [x] Touch tractor beam button inside canvas, wenn ratio long enough rechts und links einer, sonst unten. transparente buttons, Button highlights when active (yellow background) der css stil der buttons soll so wie schon eingebaut . bei ratio 1.6 soll der umschalter sein, seite oder unten (in constants,js)
 - [x] ergänze in der unteren rechten und unteren linken ecke zwei buttons, die schub geben und wenn die pod buttons am rand sind, dann über dem thrust button einen feuer button auf beiden seiten wenn der pod button unten ist nur einen feuer button in der oberen rechten ecke des canvas. in der oberen lnken ecke zwei klkeine buttons für nach lnks und nach rechts drehen. achte darauf, dass die bisherige positioniertung der pod buttons so erhalten bleibt, sie ist. also nu zussätzliche butons für fuer (x) und thrust (up) 
+- [ ] man muss das fuel langsam leer  saugen können nund wenn es lehr ist, soll der sprite aus dem level verschwinden
+- [ ] Der pod button geht aus, wenn man den thrust drückt, soll aber zusammen funktionieren
+- [ ] Schießt man auf das Kraftwerk am Höhleneingang, werden die Geschütztürme kurz deaktiviert.
+- [ ] Den Reaktor etwa 10 Sekunden lang beschießen löst eine Kernschmelze aus. Nach 10 Sekunden explodiert der gesamte Planet mit grosser animation. Schafft man es mit der Kugel noch rechtzeitig zu entkommen, gibt es 2000 Bonuspunkte. 
+- [ ] Der aktivierte pod button verbraucht auch fuel
+- [ ] Schutzschild:  Er schützt dein Schiff vor Geschossen der Geschütztürme. Solange der Schild aktiv ist, kannst du allerdings nicht schießen und verbrauchst kontinuierlich Treibstoff. der schutzschild aktiviert sich immer gleichzeitig durch den pod button. 
+
+^
