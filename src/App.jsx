@@ -189,7 +189,7 @@ function App() {
           <button
             id="hamburger-button"
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            style={{ position: 'fixed', top: '10px', right: '10px', background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px', zIndex: 1001 }}
+            style={{ position: 'fixed', top: '-5px', right: '22px', background: 'none', border: 'none', color: '#fff', fontSize: '24px', cursor: 'pointer', padding: '4px', zIndex: 1001 }}
           >
             ☰
           </button>
