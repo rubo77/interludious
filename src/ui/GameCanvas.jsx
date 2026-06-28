@@ -594,8 +594,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         }
       }
 
-      // Tractor beam (Space key or on-screen touch button)
-      const tractorBeamActive = keys[' '] || keys['Space'] || touchActive;
+      // Tractor beam (Space key, Ctrl key, or on-screen touch button)
+      const tractorBeamActive = keys[' '] || keys['Space'] || keys['Control'] || keys['ControlLeft'] || keys['ControlRight'] || touchActive;
 
       // Tractor beam raycast: beam shoots straight down until it hits the first obstacle.
       // Disabled while the pod is being towed (docked).
@@ -621,11 +621,11 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         }
       }
 
-      // Player shooting (X key)
+      // Player shooting (X key or Shift)
       setPlayerBullets(prev => {
         const newBullets = [...prev];
         // Check if X is pressed or fire button is active and add cooldown logic
-        if (keys['x'] || keys['X'] || fireActive) {
+        if (keys['x'] || keys['X'] || keys['Shift'] || keys['ShiftLeft'] || keys['ShiftRight'] || fireActive) {
           // Simple cooldown: only shoot every ~10 frames
           const lastShotTime = newBullets.length > 0 ? newBullets[newBullets.length - 1].time : 0;
           if (performance.now() - lastShotTime > 150) { // 150ms cooldown

@@ -29,8 +29,8 @@ A modern, smooth, and anti-aliased web port of the classic Thrust game, built wi
 | ↑ / W | Thrust |
 | ← / A | Rotate Left |
 | → / D | Rotate Right |
-| Space | Tractor Beam / Pod |
-| X | Shoot |
+| Space / Ctrl | Tractor Beam / Pod |
+| X / Shift | Shoot |
 
 ### Game Over Screen
 
