@@ -173,6 +173,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [rotateRightActive, setRotateRightActive] = useState(false); // rotate right button pressed
   // Track pointerId to button type mapping for multi-touch support
   const pointerButtonMap = useRef(new Map());
+  // Track pointerIds that are currently pressing buttons (for joystick filtering)
+  const buttonPointerIds = useRef(new Set());
   // Virtual joystick control (touch/mouse anywhere on screen)
   const [joystickActive, setJoystickActive] = useState(false);
   const [joystickStart, setJoystickStart] = useState({ x: 0, y: 0 });
@@ -253,6 +255,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       if (btn) {
         e.preventDefault();
         pointerButtonMap.current.set(e.pointerId, btn.type);
+        buttonPointerIds.current.add(e.pointerId);
         switch (btn.type) {
           case 'pod': setTouchActive(true); break;
           case 'thrust': setThrustActive(true); break;
@@ -261,10 +264,12 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           case 'rotateRight': setRotateRightActive(true); break;
         }
       } else {
-        // Virtual joystick: activate anywhere on screen
-        e.preventDefault();
-        setJoystickActive(true);
-        setJoystickStart({ x: e.clientX, y: e.clientY });
+        // Virtual joystick: activate anywhere on screen, but ignore if pointerId is pressing a button
+        if (!buttonPointerIds.current.has(e.pointerId)) {
+          e.preventDefault();
+          setJoystickActive(true);
+          setJoystickStart({ x: e.clientX, y: e.clientY });
+        }
       }
     };
 
@@ -299,6 +304,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         const buttonType = pointerButtonMap.current.get(e.pointerId);
         if (buttonType) {
           pointerButtonMap.current.delete(e.pointerId);
+          buttonPointerIds.current.delete(e.pointerId);
           switch (buttonType) {
             case 'pod': setTouchActive(false); break;
             case 'thrust': setThrustActive(false); break;
