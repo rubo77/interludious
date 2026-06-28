@@ -680,9 +680,16 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
             if (distance < 50) {
               pod.onHolder = false; // [POD_HOLDER] leaving the holder for good
               pod.towed = true;
+              // Reset joystick rotation when pod is docked to prevent spinning
+              setJoystickRotationSpeed(0);
             }
           } else {
-            pod.towed = true;
+            // Check if pod was not towed before and is now being towed
+            if (!pod.towed) {
+              pod.towed = true;
+              // Reset joystick rotation when pod is docked to prevent spinning
+              setJoystickRotationSpeed(0);
+            }
           }
         } else {
           pod.towed = false;
