@@ -73,9 +73,10 @@ function getTouchButtonRects(w, h, ratio, topOffset = 0, bottomGap = 10, showTou
   // Rotate buttons (top-left corner, below HUD) - only visible when showTouchButtons is true
   if (showTouchButtons) {
     const rotateSize = 40;
+    const rotateGap = 3; // Reduced gap between rotate buttons
     buttons.push(
-      { type: 'rotateLeft', x: margin, y: topY, w: rotateSize, h: rotateSize, label: '←', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)', hitX: margin - hitMargin, hitY: topY - hitMargin, hitW: rotateSize + hitMargin * 2, hitH: rotateSize + hitMargin * 2 },
-      { type: 'rotateRight', x: margin + rotateSize + 5, y: topY, w: rotateSize, h: rotateSize, label: '→', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)', hitX: margin + rotateSize + 5 - hitMargin, hitY: topY - hitMargin, hitW: rotateSize + hitMargin * 2, hitH: rotateSize + hitMargin * 2 }
+      { type: 'rotateLeft', x: margin, y: topY, w: rotateSize, h: rotateSize, label: '←', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)', hitX: margin - hitMargin, hitY: topY - hitMargin, hitW: rotateSize + hitMargin + rotateGap, hitH: rotateSize + hitMargin * 2 },
+      { type: 'rotateRight', x: margin + rotateSize + rotateGap, y: topY, w: rotateSize, h: rotateSize, label: '→', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)', hitX: margin + rotateSize + rotateGap - hitMargin, hitY: topY - hitMargin, hitW: rotateSize + hitMargin * 2, hitH: rotateSize + hitMargin * 2 }
     );
   }
 
@@ -302,22 +303,56 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
     };
 
     const handlePointerMove = (e) => {
-      if (!joystickActive) return;
-      const dx = e.clientX - joystickStart.x;
-      const dy = e.clientY - joystickStart.y;
-      // Horizontal movement: rotation speed based on horizontal velocity
-      // Map horizontal movement to rotation speed: left -> negative, right -> positive
-      if (Math.abs(dx) > JOYSTICK_THRESHOLD) {
-        const rotationSpeed = dx * JOYSTICK_SPEED_FACTOR;
-        setJoystickRotationSpeed(rotationSpeed);
-      } else {
-        setJoystickRotationSpeed(0);
+      // Handle joystick movement
+      if (joystickActive) {
+        const dx = e.clientX - joystickStart.x;
+        const dy = e.clientY - joystickStart.y;
+        // Horizontal movement: rotation speed based on horizontal velocity
+        // Map horizontal movement to rotation speed: left -> negative, right -> positive
+        if (Math.abs(dx) > JOYSTICK_THRESHOLD) {
+          const rotationSpeed = dx * JOYSTICK_SPEED_FACTOR;
+          setJoystickRotationSpeed(rotationSpeed);
+        } else {
+          setJoystickRotationSpeed(0);
+        }
+        // Vertical movement: accelerate up
+        if (dy < -JOYSTICK_THRESHOLD) {
+          setAccelerateActive(true);
+        } else {
+          setAccelerateActive(false);
+        }
       }
-      // Vertical movement: accelerate up
-      if (dy < -JOYSTICK_THRESHOLD) {
-        setAccelerateActive(true);
-      } else {
-        setAccelerateActive(false);
+
+      // Handle button sliding gestures
+      if (buttonPointerIds.current.has(e.pointerId)) {
+        const currentButtonType = pointerButtonMap.current.get(e.pointerId);
+        const newButton = getButtonAt(e.clientX, e.clientY);
+
+        if (newButton) {
+          // Finger moved to a new button - switch to the new button
+          if (newButton.type !== currentButtonType) {
+            // Deactivate old button
+            switch (currentButtonType) {
+              case 'pod': setTouchActive(false); setShieldActive(false); break;
+              case 'thrust': setAccelerateActive(false); break;
+              case 'fire': setFireActive(false); break;
+              case 'rotateLeft': setRotateLeftActive(false); break;
+              case 'rotateRight': setRotateRightActive(false); break;
+            }
+            // Activate new button
+            pointerButtonMap.current.set(e.pointerId, newButton.type);
+            switch (newButton.type) {
+              case 'pod': setTouchActive(true); setShieldActive(true); break;
+              case 'thrust': setAccelerateActive(true); break;
+              case 'fire': setFireActive(true); break;
+              case 'rotateLeft': setRotateLeftActive(true); break;
+              case 'rotateRight': setRotateRightActive(true); break;
+            }
+          }
+        } else {
+          // Finger moved outside all buttons - keep current button active (sliding gesture)
+          // Button stays pressed as long as pointer is still down
+        }
       }
     };
 
