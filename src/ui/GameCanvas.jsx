@@ -202,6 +202,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   // Virtual joystick control (touch/mouse anywhere on screen)
   const [joystickActive, setJoystickActive] = useState(false);
   const [joystickStart, setJoystickStart] = useState({ x: 0, y: 0 });
+  const joystickStartRef = useRef({ x: 0, y: 0 }); // Ref for synchronous position updates
   const [joystickRotationSpeed, setJoystickRotationSpeed] = useState(0); // rotation speed from joystick
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
@@ -309,7 +310,9 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           e.preventDefault();
           setJoystickActive(true);
           joystickPointerId.current = e.pointerId;
-          setJoystickStart({ x: e.clientX, y: e.clientY });
+          const startPos = { x: e.clientX, y: e.clientY };
+          joystickStartRef.current = startPos;
+          setJoystickStart(startPos);
         }
       }
     };
@@ -317,8 +320,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
     const handlePointerMove = (e) => {
       // Handle joystick movement
       if (joystickActive) {
-        const dx = e.clientX - joystickStart.x;
-        const dy = e.clientY - joystickStart.y;
+        const dx = e.clientX - joystickStartRef.current.x;
+        const dy = e.clientY - joystickStartRef.current.y;
         // Horizontal movement: rotation speed based on horizontal velocity
         // Map horizontal movement to rotation speed: left -> negative, right -> positive
         if (Math.abs(dx) > JOYSTICK_THRESHOLD) {
@@ -327,7 +330,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         } else {
           setJoystickRotationSpeed(0);
           // Reset horizontal zero position to stop rotation when movement stops
-          setJoystickStart(prev => ({ ...prev, x: e.clientX }));
+          joystickStartRef.current.x = e.clientX;
+          setJoystickStart(joystickStartRef.current);
         }
         // Vertical movement: accelerate up
         if (dy < -JOYSTICK_THRESHOLD) {
