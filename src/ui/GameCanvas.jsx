@@ -9,7 +9,7 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_VELOCITY_FACTOR, JOYSTICK_STOP_MS, CAMERA_BOTTOM_OFFSET, SCORE_BUNKER_DESTROYED, SCORE_BUTTON_SLIDER, SHOOT_COOLDOWN_MS, SHIELD_RADIUS, SHIELD_COLOR, BUTTON_SIZE_FACTOR, BUTTON_MARGIN_FACTOR } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_VELOCITY_FACTOR, JOYSTICK_STOP_MS, DOOR_AUTO_CLOSE_MS, DOOR_SLIDE_MS_PER_COL, CAMERA_BOTTOM_OFFSET, SCORE_BUNKER_DESTROYED, SCORE_BUTTON_SLIDER, SHOOT_COOLDOWN_MS, SHIELD_RADIUS, SHIELD_COLOR, BUTTON_SIZE_FACTOR, BUTTON_MARGIN_FACTOR } from '../core/constants.js';
 
 // Client-space height of the DOM HUD overlay (App.jsx top bar).
 // Used to keep the top touch buttons (fire/rotate) below the HUD in every layout.
@@ -205,6 +205,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const joystickRotationSpeedRef = useRef(0); // Ref for rotation speed to avoid state updates
   const joystickLastXRef = useRef(0); // Last horizontal pointer position to compute movement velocity
   const joystickLastMoveTimeRef = useRef(0); // Timestamp of last horizontal movement (to stop rotation when finger holds still)
+  const doorsRef = useRef([]); // Door system: sliding doors between H and G tiles
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [tilesetLoaded, setTilesetLoaded] = useState(false);
@@ -436,6 +437,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         const levelContent = await levelLoader.current.loadLevel(`level${currentLevel}`);
         const lines = levelContent.split('\n');
 
+        console.log('[LEVEL_LOAD] Loading level:', currentLevel);
         // Parse metadata: width, height, height of start, empty space, bedrock
         const lenx = parseInt(lines[0], 10);
         const sx = parseInt(lines[2], 10); // height of start (stars)
@@ -475,10 +477,11 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
               });
             }
             if (['L', 'N'].includes(layout[y][x])) {
-              buttonPositions.push({ 
-                x: x * scaledSize + scaledSize / 2, 
-                y: y * scaledSize + scaledSize / 2, 
-                type: layout[y][x] 
+              buttonPositions.push({
+                x: x * scaledSize + scaledSize / 2,
+                y: y * scaledSize + scaledSize / 2,
+                type: layout[y][x],
+                tag: x > 0 ? layout[y][x - 1] : null // Button tag is the character to the left
               });
             }
             if (layout[y][x].charCodeAt(0) >= 64 && layout[y][x].charCodeAt(0) <= 75) {
@@ -497,6 +500,109 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         // the pod explode the moment it left the holder. The holder itself is built
         // from the surrounding stand tiles (digits 0-4) and stays in the layout.
         const cleanedLayout = layout.map(row => row.replace(/m/g, ' '));
+
+        // Detect doors: H (left) and G (right) pairs with solid p tiles between them
+        const doors = [];
+        console.log('[DOOR_DETECT] Starting door detection...');
+        for (let y = 0; y < cleanedLayout.length; y++) {
+          const row = cleanedLayout[y];
+          const hIndices = [];
+          const gIndices = [];
+          for (let x = 0; x < row.length; x++) {
+            if (row[x] === 'H') hIndices.push(x);
+            if (row[x] === 'G') gIndices.push(x);
+          }
+          console.log('[DOOR_DETECT] Row', y, 'H at:', hIndices, 'G at:', gIndices);
+          // Pair H and G on the same row (H must be left of G)
+          for (const hCol of hIndices) {
+            for (const gCol of gIndices) {
+              if (gCol > hCol && gCol - hCol > 1) {
+                // Check if all cells between H and G are solid p tiles
+                let allSolid = true;
+                for (let c = hCol + 1; c < gCol; c++) {
+                  if (row[c] !== 'p') {
+                    allSolid = false;
+                    console.log('[DOOR_DETECT] Row', y, 'col', c, 'is not p:', row[c]);
+                    break;
+                  }
+                }
+                if (allSolid) {
+                  doors.push({
+                    rows: [y],
+                    colStart: hCol,
+                    colEnd: gCol,
+                    state: 'closed',
+                    filledCols: gCol - hCol - 1,
+                    timer: 0,
+                    slideAccum: 0
+                  });
+                  console.log('[DOOR_DETECT] Found door at row', y, 'cols', hCol, '-', gCol);
+                }
+              }
+            }
+          }
+        }
+
+        // Group doors that are vertically adjacent (same column range)
+        const doorGroups = [];
+        for (const door of doors) {
+          let merged = false;
+          for (const group of doorGroups) {
+            if (group.colStart === door.colStart && group.colEnd === door.colEnd) {
+              // Check if vertically adjacent
+              const lastRow = group.rows[group.rows.length - 1];
+              if (door.rows[0] === lastRow + 1) {
+                group.rows.push(door.rows[0]);
+                merged = true;
+                break;
+              }
+            }
+          }
+          if (!merged) {
+            doorGroups.push({
+              rows: [door.rows[0]],
+              colStart: door.colStart,
+              colEnd: door.colEnd,
+              state: 'closed',
+              filledCols: door.filledCols,
+              timer: 0,
+              slideAccum: 0
+            });
+          }
+        }
+
+        // Assign buttons to closest door group (analogous to closestbutton in C code)
+        console.log('[BUTTON_ASSIGN] Assigning buttons to doors. Buttons:', buttonPositions.length, 'Door groups:', doorGroups.length);
+        for (const button of buttonPositions) {
+          let closestDoor = null;
+          let closestDist = Infinity;
+          for (const door of doorGroups) {
+            const doorCenterX = (door.colStart + door.colEnd) / 2 * scaledSize;
+            const doorCenterY = door.rows[0] * scaledSize;
+            const dist = Math.sqrt((button.x - doorCenterX) ** 2 + (button.y - doorCenterY) ** 2);
+            console.log('[BUTTON_ASSIGN] Button at', button.x, button.y, 'to door center', doorCenterX, doorCenterY, 'dist:', dist);
+            if (dist < closestDist) {
+              closestDist = dist;
+              closestDoor = door;
+            }
+          }
+          if (closestDoor) {
+            button.door = closestDoor;
+            console.log('[BUTTON_ASSIGN] Assigned button to door, closest dist:', closestDist);
+          } else {
+            console.log('[BUTTON_ASSIGN] No door assigned to button at', button.x, button.y);
+          }
+        }
+
+        doorsRef.current = doorGroups;
+        console.log('[DOOR] Detected door groups:', doorGroups.length);
+        doorGroups.forEach((door, i) => {
+          console.log('[DOOR] Group', i, 'rows:', door.rows, 'cols:', door.colStart, '-', door.colEnd, 'filledCols:', door.filledCols);
+        });
+        console.log('[BUTTON] Button positions with door assignment:');
+        buttonPositions.forEach((bp, i) => {
+          console.log('[BUTTON]', i, 'type:', bp.type, 'tag:', bp.tag, 'door:', bp.door ? 'yes' : 'no');
+        });
 
         console.log('[LEVEL] Loaded level1:', layout.length, 'rows x', lenx, 'cols');
         console.log('[POD] Position:', podPos);
@@ -529,7 +635,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           setCamera({ x: camX, y: camY });
         }
         setBunkers(bunkerPositions.map(bp => new Bunker(bp.x, bp.y, bp.type)));
-        setButtons(buttonPositions.map(bp => new Button(bp.x, bp.y, bp.type)));
+        setButtons(buttonPositions.map(bp => new Button(bp.x, bp.y, bp.type, bp.tag, bp.door)));
         setSliders(sliderPositions.map(sp => new Slider(sp.x, sp.y, sp.type, 'horizontal')));
 
         // Generate stars in the SKY (the region ABOVE the level, i.e. negative y).
@@ -722,6 +828,56 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           particleSystem.current.spawnAccelerate(accelerateX, accelerateY, ship.angle);
         } else {
           ship.setAccelerate(false);
+        }
+      }
+
+      // Door state machine: handle opening/closing animation and auto-close
+      if (level) {
+        for (const door of doorsRef.current) {
+          switch (door.state) {
+            case 'closed':
+              // Door is solid (p tiles), waiting for trigger
+              break;
+            case 'opening':
+              door.slideAccum += deltaTime * 16.67; // Convert to ms
+              if (door.slideAccum >= DOOR_SLIDE_MS_PER_COL) {
+                door.slideAccum = 0;
+                door.filledCols--;
+                // Clear one column from the left side
+                const colToClear = door.colStart + door.filledCols;
+                for (const row of door.rows) {
+                  const rowStr = level.layout[row];
+                  level.layout[row] = rowStr.substring(0, colToClear) + ' ' + rowStr.substring(colToClear + 1);
+                }
+                if (door.filledCols === 0) {
+                  door.state = 'open';
+                  door.timer = DOOR_AUTO_CLOSE_MS;
+                }
+              }
+              break;
+            case 'open':
+              door.timer -= deltaTime * 16.67; // Convert to ms
+              if (door.timer <= 0) {
+                door.state = 'closing';
+              }
+              break;
+            case 'closing':
+              door.slideAccum += deltaTime * 16.67; // Convert to ms
+              if (door.slideAccum >= DOOR_SLIDE_MS_PER_COL) {
+                door.slideAccum = 0;
+                door.filledCols++;
+                // Fill one column from the left side
+                const colToFill = door.colStart + door.filledCols - 1;
+                for (const row of door.rows) {
+                  const rowStr = level.layout[row];
+                  level.layout[row] = rowStr.substring(0, colToFill) + 'p' + rowStr.substring(colToFill + 1);
+                }
+                if (door.filledCols === door.colEnd - door.colStart - 1) {
+                  door.state = 'closed';
+                }
+              }
+              break;
+          }
         }
       }
 
@@ -947,7 +1103,28 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
             });
             setBunkers(newBunkers);
 
-            // Remove bullet if it hit a bunker or is out of bounds
+            // Check collision with buttons (shot trigger)
+            let buttonHit = false;
+            buttons.forEach(button => {
+              const dx = bullet.x - button.x;
+              const dy = bullet.y - button.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              if (distance < 15) {
+                buttonHit = true;
+                console.log('[BUTTON_HIT] Button hit:', button.type, 'tag:', button.tag, 'door:', button.door ? 'yes' : 'no');
+                // Trigger door opening if button has an assigned door
+                if (button.door && button.door.state === 'closed') {
+                  console.log('[DOOR] Opening door, state:', button.door.state);
+                  button.door.state = 'opening';
+                } else if (button.door) {
+                  console.log('[DOOR] Door not closed, state:', button.door.state);
+                } else {
+                  console.log('[DOOR] No door assigned to button');
+                }
+              }
+            });
+
+            // Remove bullet if it hit a bunker or button or is out of bounds
             if (bulletHit) return false;
             if (bullet.x < -100 || bullet.x > level.width * 16 + 100 ||
                 bullet.y < -100 || bullet.y > level.height * 16 + 100) {
@@ -955,27 +1132,6 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
             }
             return true;
           });
-        });
-
-        // Update buttons and check collision with ship
-        buttons.forEach(button => {
-          button.update(deltaTime);
-          const dx = ship.x - button.x;
-          const dy = ship.y - button.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < 15) {
-            if (button.press()) {
-              // Button pressed, activate all sliders with matching tag
-              sliders.forEach(slider => {
-                slider.activate();
-              });
-            }
-          }
-        });
-
-        // Update sliders
-        sliders.forEach(slider => {
-          slider.update(deltaTime);
         });
 
         // Update screen shake

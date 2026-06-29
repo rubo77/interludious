@@ -1,10 +1,11 @@
 // Button - Interactive element that triggers sliders
 export class Button {
-  constructor(x, y, type = 'L', tag = 0) {
+  constructor(x, y, type = 'L', tag = 0, door = null) {
     this.x = x;
     this.y = y;
     this.type = type;
     this.tag = tag;
+    this.door = door;
     this.pressed = false;
     this.pressCooldown = 0;
   }

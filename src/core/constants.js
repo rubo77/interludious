@@ -38,6 +38,11 @@ export const JOYSTICK_THRESHOLD = 30;
 export const JOYSTICK_VELOCITY_FACTOR = 0.004;
 // Virtual joystick: time (ms) without horizontal movement after which rotation stops
 export const JOYSTICK_STOP_MS = 60;
+
+// Door system: automatic close timeout (ms) after door fully opens
+export const DOOR_AUTO_CLOSE_MS = 3000;
+// Door system: animation step time (ms) per column slide
+export const DOOR_SLIDE_MS_PER_COL = 50;
 // Touch button size factor - base thickness for all buttons
 export const BUTTON_SIZE_FACTOR = 40;
 // Touch button margin factor - transparent margin around buttons for hit area

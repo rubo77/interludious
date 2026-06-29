@@ -35,6 +35,12 @@ A modern, smooth, and anti-aliased space game built with React, Vite, and HTML5 
 ### Touch / Joystick Control
 
 Works with mouse and touch: starting from the touch point, moving right rotates the ship right, moving left rotates left, moving up accelerates.
+**Explanation:**
+It resets only the horizontal zero position (`joystickStart.x`) when horizontal movement stops, while keeping vertical movement independent. This way:
+- Horizontal rotation only happens while actively moving left/right
+- Vertical acceleration can continue independently
+- e.g. If user slides right-up then continues only up, the horizontal zero position resets to stop rotation
+
 
 ### Game Over Screen
 
