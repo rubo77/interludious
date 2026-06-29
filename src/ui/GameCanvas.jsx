@@ -201,9 +201,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [shieldActive, setShieldActive] = useState(false);
   // Virtual joystick control (touch/mouse anywhere on screen)
   const [joystickActive, setJoystickActive] = useState(false);
-  const [joystickStart, setJoystickStart] = useState({ x: 0, y: 0 });
   const joystickStartRef = useRef({ x: 0, y: 0 }); // Ref for synchronous position updates
-  const [joystickRotationSpeed, setJoystickRotationSpeed] = useState(0); // rotation speed from joystick
+  const joystickRotationSpeedRef = useRef(0); // Ref for rotation speed to avoid state updates
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [tilesetLoaded, setTilesetLoaded] = useState(false);
@@ -291,7 +290,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         // Deactivate joystick only if the same pointerId is pressing a button
         if (joystickActive && joystickPointerId.current === e.pointerId) {
           setJoystickActive(false);
-          setJoystickRotationSpeed(0);
+          joystickRotationSpeedRef.current = 0;
           setAccelerateActive(false);
           joystickPointerId.current = null;
         }
@@ -310,9 +309,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           e.preventDefault();
           setJoystickActive(true);
           joystickPointerId.current = e.pointerId;
-          const startPos = { x: e.clientX, y: e.clientY };
-          joystickStartRef.current = startPos;
-          setJoystickStart(startPos);
+          joystickStartRef.current = { x: e.clientX, y: e.clientY };
+          joystickRotationSpeedRef.current = 0;
         }
       }
     };
@@ -326,12 +324,11 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         // Map horizontal movement to rotation speed: left -> negative, right -> positive
         if (Math.abs(dx) > JOYSTICK_THRESHOLD) {
           const rotationSpeed = dx * JOYSTICK_SPEED_FACTOR;
-          setJoystickRotationSpeed(rotationSpeed);
+          joystickRotationSpeedRef.current = rotationSpeed;
         } else {
-          setJoystickRotationSpeed(0);
+          joystickRotationSpeedRef.current = 0;
           // Reset horizontal zero position to stop rotation when movement stops
           joystickStartRef.current.x = e.clientX;
-          setJoystickStart(joystickStartRef.current);
         }
         // Vertical movement: accelerate up
         if (dy < -JOYSTICK_THRESHOLD) {
@@ -378,7 +375,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       // Only reset joystick states when joystick is active and this pointerId is controlling it
       if (joystickActive && joystickPointerId.current === e.pointerId) {
         setJoystickActive(false);
-        setJoystickRotationSpeed(0);
+        joystickRotationSpeedRef.current = 0;
         setAccelerateActive(false);
         joystickPointerId.current = null;
       } else {
@@ -409,7 +406,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [width, height, joystickActive, joystickStart, joystickRotationSpeed]);
+  }, [width, height, joystickActive]);
 
   useEffect(() => {
     const loadAssets = async () => {
@@ -696,8 +693,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       // Handle input (skipped while the ship is exploding)
       if (!isDying) {
         // Joystick rotation speed control
-        if (joystickRotationSpeed !== 0) {
-          ship.angle += joystickRotationSpeed;
+        if (joystickRotationSpeedRef.current !== 0) {
+          ship.angle += joystickRotationSpeedRef.current;
           ship.rotation = (ship.angle * 180 / Math.PI) % 360;
         } else {
           // Keyboard/button rotation (continuous)
@@ -807,14 +804,14 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
               pod.onHolder = false; // [POD_HOLDER] leaving the holder for good
               pod.towed = true;
               // Reset joystick rotation when pod is docked to prevent spinning
-              setJoystickRotationSpeed(0);
+              joystickRotationSpeedRef.current = 0;
             }
           } else {
             // Check if pod was not towed before and is now being towed
             if (!pod.towed) {
               pod.towed = true;
               // Reset joystick rotation when pod is docked to prevent spinning
-              setJoystickRotationSpeed(0);
+              joystickRotationSpeedRef.current = 0;
             }
           }
         } else {
