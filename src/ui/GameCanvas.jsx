@@ -9,7 +9,7 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_SPEED_FACTOR, CAMERA_BOTTOM_OFFSET, SCORE_BUNKER_DESTROYED, SCORE_BUTTON_SLIDER, SHOOT_COOLDOWN_MS, SHIELD_RADIUS, SHIELD_COLOR, BUTTON_SIZE_FACTOR, BUTTON_MARGIN_FACTOR } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_VELOCITY_FACTOR, JOYSTICK_STOP_MS, CAMERA_BOTTOM_OFFSET, SCORE_BUNKER_DESTROYED, SCORE_BUTTON_SLIDER, SHOOT_COOLDOWN_MS, SHIELD_RADIUS, SHIELD_COLOR, BUTTON_SIZE_FACTOR, BUTTON_MARGIN_FACTOR } from '../core/constants.js';
 
 // Client-space height of the DOM HUD overlay (App.jsx top bar).
 // Used to keep the top touch buttons (fire/rotate) below the HUD in every layout.
@@ -201,8 +201,10 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [shieldActive, setShieldActive] = useState(false);
   // Virtual joystick control (touch/mouse anywhere on screen)
   const [joystickActive, setJoystickActive] = useState(false);
-  const joystickStartRef = useRef({ x: 0, y: 0 }); // Ref for synchronous position updates
+  const joystickStartRef = useRef({ x: 0, y: 0 }); // Ref for synchronous position updates (vertical anchor)
   const joystickRotationSpeedRef = useRef(0); // Ref for rotation speed to avoid state updates
+  const joystickLastXRef = useRef(0); // Last horizontal pointer position to compute movement velocity
+  const joystickLastMoveTimeRef = useRef(0); // Timestamp of last horizontal movement (to stop rotation when finger holds still)
   const [level, setLevel] = useState(null);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [tilesetLoaded, setTilesetLoaded] = useState(false);
@@ -311,6 +313,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           joystickPointerId.current = e.pointerId;
           joystickStartRef.current = { x: e.clientX, y: e.clientY };
           joystickRotationSpeedRef.current = 0;
+          joystickLastXRef.current = e.clientX;
+          joystickLastMoveTimeRef.current = performance.now();
         }
       }
     };
@@ -318,21 +322,18 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
     const handlePointerMove = (e) => {
       // Handle joystick movement
       if (joystickActive) {
-        const dx = e.clientX - joystickStartRef.current.x;
+        // Horizontal: rotation speed is driven by pointer movement velocity (delta per event),
+        // not absolute offset. pointermove only fires while the finger actually moves, so when
+        // the finger holds still no events arrive; the render loop zeroes rotation after
+        // JOYSTICK_STOP_MS of silence. This makes the ship rotate only while actively sliding
+        // left/right and stop the moment horizontal movement stops.
+        const velocityX = e.clientX - joystickLastXRef.current;
+        joystickLastXRef.current = e.clientX;
+        joystickRotationSpeedRef.current = velocityX * JOYSTICK_VELOCITY_FACTOR;
+        joystickLastMoveTimeRef.current = performance.now();
+
+        // Vertical: accelerate based on absolute offset from the touch start (independent of horizontal).
         const dy = e.clientY - joystickStartRef.current.y;
-        // Horizontal movement: rotation speed based on horizontal velocity
-        // Map horizontal movement to rotation speed: left -> negative, right -> positive
-        if (Math.abs(dx) > JOYSTICK_THRESHOLD) {
-          const rotationSpeed = dx * JOYSTICK_SPEED_FACTOR;
-          joystickRotationSpeedRef.current = rotationSpeed;
-          console.log('[JOYSTICK] dx=' + dx.toFixed(2) + ' rotationSpeed=' + rotationSpeed.toFixed(4));
-        } else {
-          joystickRotationSpeedRef.current = 0;
-          // Reset horizontal zero position to stop rotation when movement stops
-          joystickStartRef.current.x = e.clientX;
-          console.log('[JOYSTICK] dx=' + dx.toFixed(2) + ' below threshold, reset rotation');
-        }
-        // Vertical movement: accelerate up
         if (dy < -JOYSTICK_THRESHOLD) {
           setAccelerateActive(true);
         } else {
@@ -694,11 +695,16 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
 
       // Handle input (skipped while the ship is exploding)
       if (!isDying) {
+        // Stop joystick rotation if the finger has held still (no pointermove events) for a short
+        // window. pointermove only fires on movement, so silence means the finger stopped sliding.
+        if (joystickRotationSpeedRef.current !== 0 &&
+            performance.now() - joystickLastMoveTimeRef.current > JOYSTICK_STOP_MS) {
+          joystickRotationSpeedRef.current = 0;
+        }
         // Joystick rotation speed control
         if (joystickRotationSpeedRef.current !== 0) {
           ship.angle += joystickRotationSpeedRef.current;
           ship.rotation = (ship.angle * 180 / Math.PI) % 360;
-          console.log('[JOYSTICK_RENDER] rotationSpeed=' + joystickRotationSpeedRef.current.toFixed(4) + ' angle=' + ship.angle.toFixed(2));
         } else {
           // Keyboard/button rotation (continuous)
           if (keys['ArrowLeft'] || keys['a'] || keys['A'] || rotateLeftActive) {

@@ -34,8 +34,10 @@ export const POD_TETHER_WIDTH = 1; // Width of the visible tether line (pixels)
 export const TOUCH_BUTTON_RATIO_THRESHOLD = 1.9;
 // Virtual joystick: minimum movement (pixels) to activate direction control
 export const JOYSTICK_THRESHOLD = 30;
-// Virtual joystick: scale factor for rotation speed based on horizontal movement
-export const JOYSTICK_SPEED_FACTOR = 0.0005;
+// Virtual joystick: scale factor mapping horizontal pointer velocity (px/event) to rotation speed
+export const JOYSTICK_VELOCITY_FACTOR = 0.004;
+// Virtual joystick: time (ms) without horizontal movement after which rotation stops
+export const JOYSTICK_STOP_MS = 60;
 // Touch button size factor - base thickness for all buttons
 export const BUTTON_SIZE_FACTOR = 40;
 // Touch button margin factor - transparent margin around buttons for hit area
