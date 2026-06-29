@@ -55,14 +55,14 @@ function getTouchButtonRects(w, h, ratio, topOffset = 0, bottomGap = 10, showTou
       const podHeightLandscape = bottomBtnY - topY - fireHeight - 2 * BUTTON_MARGIN_FACTOR;
       const podY = topY + fireHeight + margin;
       buttons.push(
-        { type: 'pod', x: margin, y: podY, w: podWidth, h: podHeightLandscape, label: 'POD', font: '14px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)', hitX: margin - hitMargin, hitY: podY - hitMargin, hitW: podWidth + hitMargin * 2, hitH: podHeightLandscape + hitMargin * 2 },
-        { type: 'pod', x: w - podWidth - margin, y: podY, w: podWidth, h: podHeightLandscape, label: 'POD', font: '14px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)', hitX: w - podWidth - margin - hitMargin, hitY: podY - hitMargin, hitW: podWidth + hitMargin * 2, hitH: podHeightLandscape + hitMargin * 2 }
+        { type: 'pod', x: margin, y: podY, w: podWidth, h: podHeightLandscape, label: 'POD', font: '14px Arial', color: 'rgba(0, 0, 0, 0.2)', activeColor: 'rgba(0, 0, 0, 0.5)', hitX: margin - hitMargin, hitY: podY - hitMargin, hitW: podWidth + hitMargin * 2, hitH: podHeightLandscape + hitMargin * 2 },
+        { type: 'pod', x: w - podWidth - margin, y: podY, w: podWidth, h: podHeightLandscape, label: 'POD', font: '14px Arial', color: 'rgba(0, 0, 0, 0.2)', activeColor: 'rgba(0, 0, 0, 0.5)', hitX: w - podWidth - margin - hitMargin, hitY: podY - hitMargin, hitW: podWidth + hitMargin * 2, hitH: podHeightLandscape + hitMargin * 2 }
       );
     } else {
       // Portrait: Single large POD button at bottom, full width between accelerate buttons
       const podWidthPortrait = w - 2 * (accelerateWidth + margin);
       buttons.push(
-        { type: 'pod', x: accelerateWidth + margin, y: bottomBtnY, w: podWidthPortrait, h: podHeightPortrait, label: 'POD (Traktorstrahl)', font: '16px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)', hitX: accelerateWidth + margin - hitMargin, hitY: bottomBtnY - hitMargin, hitW: podWidthPortrait + hitMargin * 2, hitH: podHeightPortrait + hitMargin * 2 }
+        { type: 'pod', x: accelerateWidth + margin, y: bottomBtnY, w: podWidthPortrait, h: podHeightPortrait, label: 'POD (Traktorstrahl)', font: '16px Arial', color: 'rgba(0, 0, 0, 0.2)', activeColor: 'rgba(0, 0, 0, 0.5)', hitX: accelerateWidth + margin - hitMargin, hitY: bottomBtnY - hitMargin, hitW: podWidthPortrait + hitMargin * 2, hitH: podHeightPortrait + hitMargin * 2 }
       );
     }
   }
@@ -212,6 +212,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
   const [bunkers, setBunkers] = useState([]);
   const [bullets, setBullets] = useState([]);
   const [playerBullets, setPlayerBullets] = useState([]);
+  // POD button icon
+  const podIconRef = useRef(null);
   const [buttons, setButtons] = useState([]);
   const [sliders, setSliders] = useState([]);
   const [score, setScore] = useState(0);
@@ -405,6 +407,15 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
 
   useEffect(() => {
     const loadAssets = async () => {
+      // Load POD button icon
+      const podIcon = new Image();
+      podIcon.src = '/POD_button.png';
+      await new Promise((resolve, reject) => {
+        podIcon.onload = resolve;
+        podIcon.onerror = reject;
+      });
+      podIconRef.current = podIcon;
+
       // Load the original tileset
       try {
         await tileRenderer.current.load();
@@ -1365,9 +1376,36 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         ctx.strokeStyle = btn.activeColor;
         ctx.lineWidth = 2;
         ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
-        ctx.fillStyle = '#fff';
-        ctx.font = btn.font;
-        ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2 + 5);
+        // Draw icon for POD button, text for other buttons
+        if (btn.type === 'pod' && podIconRef.current) {
+          // Scale icon to fit button with padding while preserving aspect ratio (2.4:1)
+          const iconPadding = 4;
+          const iconAspectRatio = 2.4; // height/width from original 367x881
+          const availableWidth = btn.w - iconPadding * 2;
+          const availableHeight = btn.h - iconPadding * 2;
+          
+          let iconWidth, iconHeight;
+          if (availableHeight / availableWidth > iconAspectRatio) {
+            // Button is taller than icon ratio - fit to width
+            iconWidth = availableWidth;
+            iconHeight = iconWidth * iconAspectRatio;
+          } else {
+            // Button is wider than icon ratio - fit to height
+            iconHeight = availableHeight;
+            iconWidth = iconHeight / iconAspectRatio;
+          }
+          
+          const iconX = btn.x + (btn.w - iconWidth) / 2;
+          const iconY = btn.y + (btn.h - iconHeight) / 2;
+          // Enable high-quality image smoothing
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(podIconRef.current, iconX, iconY, iconWidth, iconHeight);
+        } else {
+          ctx.fillStyle = '#fff';
+          ctx.font = btn.font;
+          ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2 + 5);
+        }
       }
 
       // Render particles
