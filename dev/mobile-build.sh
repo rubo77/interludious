@@ -7,6 +7,7 @@ set -e  # Exit on error
 
 # Default configuration
 UPDATE_VERSION=false
+UPDATE_MAJOR=false
 FORCE_SYNC=false
 PLATFORM="android"
 
@@ -17,6 +18,7 @@ show_help() {
   echo "Options:"
   echo "  -h, --help                Show this help message"
   echo "  -u, --update-version      Update version: increment minor version in package.json"
+  echo "  -m, --major               Update version: increment major version, reset minor and patch to 0"
   echo "  -s, --sync-only           Only sync native apps with latest web code (no build)"
   echo ""
   echo "Platforms:"
@@ -35,6 +37,11 @@ parse_args() {
         ;;
       -u|--update-version)
         UPDATE_VERSION=true
+        shift
+        ;;
+      -m|--major)
+        UPDATE_VERSION=true
+        UPDATE_MAJOR=true
         shift
         ;;
       -s|--sync-only)
@@ -56,36 +63,54 @@ parse_args() {
 # Update version in package.json
 update_version() {
   PACKAGE_FILE="package.json"
-  
+
   if [ ! -f "$PACKAGE_FILE" ]; then
     echo "Error: package.json not found!"
     return 1
   fi
-  
+
   # Extract current version from package.json
   CURRENT_VERSION=$(grep -oP '"version":\s*"\K[^"]+' "$PACKAGE_FILE")
-  
+
   if [ -z "$CURRENT_VERSION" ]; then
     echo "Error: Could not find version in package.json"
     return 1
   fi
-  
+
   # Split version into major.minor.patch
   MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
   MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
   PATCH=$(echo "$CURRENT_VERSION" | cut -d. -f3)
-  
-  # Increment minor version
-  NEW_MINOR=$((MINOR + 1))
-  NEW_VERSION="$MAJOR.$NEW_MINOR.$PATCH"
-  
-  echo "Updating version in package.json: $CURRENT_VERSION → $NEW_VERSION"
+
+  # Increment version based on update type
+  if [ "$UPDATE_MAJOR" = true ]; then
+    # Major update: increment major, reset minor to 0
+    NEW_MAJOR=$((MAJOR + 1))
+    NEW_VERSION="$NEW_MAJOR.0"
+    echo "Updating version (major): $CURRENT_VERSION → $NEW_VERSION"
+  else
+    # Minor update: increment minor
+    NEW_MINOR=$((MINOR + 1))
+    NEW_VERSION="$MAJOR.$NEW_MINOR"
+    echo "Updating version (minor): $CURRENT_VERSION → $NEW_VERSION"
+  fi
+
   sed -i "s/\"version\":\s*\"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" "$PACKAGE_FILE"
-  
+
+  # Update version.js
+  VERSION_FILE="src/version.js"
+  if [ -f "$VERSION_FILE" ]; then
+    CURRENT_VERSION_JS=$(grep -oP "APP_VERSION = '\K[^']+" "$VERSION_FILE")
+    if [ -n "$CURRENT_VERSION_JS" ]; then
+      echo "Updating version.js: $CURRENT_VERSION_JS → $NEW_VERSION"
+      sed -i "s/APP_VERSION = '$CURRENT_VERSION_JS'/APP_VERSION = '$NEW_VERSION'/" "$VERSION_FILE"
+    fi
+  fi
+
   # Update package-lock.json
   echo "Updating package-lock.json..."
   npm install --package-lock-only --quiet
-  
+
   # Update Android versionCode in build.gradle
   GRADLE_FILE="interludious/app/build.gradle"
   if [ -f "$GRADLE_FILE" ]; then
