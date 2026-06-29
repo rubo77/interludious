@@ -326,6 +326,8 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           setJoystickRotationSpeed(rotationSpeed);
         } else {
           setJoystickRotationSpeed(0);
+          // Reset horizontal zero position to stop rotation when movement stops
+          setJoystickStart(prev => ({ ...prev, x: e.clientX }));
         }
         // Vertical movement: accelerate up
         if (dy < -JOYSTICK_THRESHOLD) {
