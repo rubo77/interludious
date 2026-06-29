@@ -36,6 +36,10 @@ export const TOUCH_BUTTON_RATIO_THRESHOLD = 1.9;
 export const JOYSTICK_THRESHOLD = 30;
 // Virtual joystick: scale factor for rotation speed based on horizontal movement
 export const JOYSTICK_SPEED_FACTOR = 0.0005;
+// Touch button size factor - base thickness for all buttons
+export const BUTTON_SIZE_FACTOR = 40;
+// Touch button margin factor - transparent margin around buttons for hit area
+export const BUTTON_MARGIN_FACTOR = 10;
 
 // Scoring
 export const SCORE_LEVEL_COMPLETE = 100;

@@ -9,7 +9,7 @@ import { ParticleSystem } from '../game/particle-system.js';
 import { TileRenderer } from '../game/tile-renderer.js';
 import { LevelLoader } from '../levels/level-loader.js';
 import { CollisionDetection } from '../physics/collision.js';
-import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_SPEED_FACTOR, CAMERA_BOTTOM_OFFSET, SCORE_BUNKER_DESTROYED, SCORE_BUTTON_SLIDER, SHOOT_COOLDOWN_MS, SHIELD_RADIUS, SHIELD_COLOR } from '../core/constants.js';
+import { SKY_THRESHOLD_OFFSET, GAME_SPEED, GRAVITY, POD_HOLDER_OFFSET, POD_TETHER_WIDTH, GAME_WIDTH, GAME_HEIGHT, TOUCH_BUTTON_RATIO_THRESHOLD, JOYSTICK_THRESHOLD, JOYSTICK_SPEED_FACTOR, CAMERA_BOTTOM_OFFSET, SCORE_BUNKER_DESTROYED, SCORE_BUTTON_SLIDER, SHOOT_COOLDOWN_MS, SHIELD_RADIUS, SHIELD_COLOR, BUTTON_SIZE_FACTOR, BUTTON_MARGIN_FACTOR } from '../core/constants.js';
 
 // Client-space height of the DOM HUD overlay (App.jsx top bar).
 // Used to keep the top touch buttons (fire/rotate) below the HUD in every layout.
@@ -28,29 +28,41 @@ const BOTTOM_GAP_CLIENT_PX = 20;
 // bottomGap is the canvas-space gap above the canvas bottom edge, derived from a
 // fixed screen-pixel value so it stays visually constant across screen sizes.
 function getTouchButtonRects(w, h, ratio, topOffset = 0, bottomGap = 10, showTouchButtons = true, isMobile = false) {
-  const margin = 10;
-  const btnSize = 50;
-  const hitMargin = 10; // Extra margin for hit area
+  const margin = BUTTON_MARGIN_FACTOR;
+  const hitMargin = BUTTON_MARGIN_FACTOR; // Extra margin for hit area
   const buttons = [];
+
+  // Calculate button sizes based on BUTTON_SIZE_FACTOR
+  const rotateWidth = BUTTON_SIZE_FACTOR;
+  const rotateHeight = BUTTON_SIZE_FACTOR * 2;
+  const rotateGap = BUTTON_MARGIN_FACTOR / 2; // Margin between rotate buttons
+  const fireWidth = BUTTON_SIZE_FACTOR * 2;
+  const fireHeight = BUTTON_SIZE_FACTOR * 2;
+  const accelerateWidth = BUTTON_SIZE_FACTOR * 2 + BUTTON_MARGIN_FACTOR;
+  const accelerateHeight = BUTTON_SIZE_FACTOR;
+  const podWidth = BUTTON_SIZE_FACTOR;
+  const podHeightPortrait = BUTTON_SIZE_FACTOR;
 
   // Top buttons (fire/rotate) start just below the HUD.
   const topY = topOffset + margin;
   // Bottom buttons sit a fixed screen-pixel gap above the canvas bottom edge.
-  const bottomBtnY = h - btnSize - bottomGap;
+  const bottomBtnY = h - accelerateHeight - bottomGap;
 
   // POD (tractor beam) buttons - visible when showTouchButtons OR isMobile
   if (showTouchButtons || isMobile) {
     if (ratio > TOUCH_BUTTON_RATIO_THRESHOLD) {
-      const bw = 60, bh = 120, y = (h - bh) / 2;
+      // Landscape: Vertical POD buttons on left/right, full available height
+      const podHeightLandscape = bottomBtnY - topY - fireHeight - 2 * BUTTON_MARGIN_FACTOR;
+      const podY = topY + fireHeight + margin;
       buttons.push(
-        { type: 'pod', x: 10, y, w: bw, h: bh, label: 'POD', font: '14px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)', hitX: 10 - hitMargin, hitY: y - hitMargin, hitW: bw + hitMargin * 2, hitH: bh + hitMargin * 2 },
-        { type: 'pod', x: w - bw - 10, y, w: bw, h: bh, label: 'POD', font: '14px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)', hitX: w - bw - 10 - hitMargin, hitY: y - hitMargin, hitW: bw + hitMargin * 2, hitH: bh + hitMargin * 2 }
+        { type: 'pod', x: margin, y: podY, w: podWidth, h: podHeightLandscape, label: 'POD', font: '14px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)', hitX: margin - hitMargin, hitY: podY - hitMargin, hitW: podWidth + hitMargin * 2, hitH: podHeightLandscape + hitMargin * 2 },
+        { type: 'pod', x: w - podWidth - margin, y: podY, w: podWidth, h: podHeightLandscape, label: 'POD', font: '14px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)', hitX: w - podWidth - margin - hitMargin, hitY: podY - hitMargin, hitW: podWidth + hitMargin * 2, hitH: podHeightLandscape + hitMargin * 2 }
       );
     } else {
-      // Bottom POD button: same height as accelerate buttons (btnSize)
-      const podWidth = w - 2 * (btnSize + margin * 2);
+      // Portrait: Single large POD button at bottom, full width between accelerate buttons
+      const podWidthPortrait = w - 2 * (accelerateWidth + margin);
       buttons.push(
-        { type: 'pod', x: btnSize + margin * 2, y: h - btnSize - bottomGap, w: podWidth, h: btnSize, label: 'POD (Traktorstrahl)', font: '16px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)', hitX: btnSize + margin * 2 - hitMargin, hitY: h - btnSize - bottomGap - hitMargin, hitW: podWidth + hitMargin * 2, hitH: btnSize + hitMargin * 2 }
+        { type: 'pod', x: accelerateWidth + margin, y: bottomBtnY, w: podWidthPortrait, h: podHeightPortrait, label: 'POD (Traktorstrahl)', font: '16px Arial', color: 'rgba(255, 255, 0, 0.2)', activeColor: 'rgba(255, 255, 0, 0.5)', hitX: accelerateWidth + margin - hitMargin, hitY: bottomBtnY - hitMargin, hitW: podWidthPortrait + hitMargin * 2, hitH: podHeightPortrait + hitMargin * 2 }
       );
     }
   }
@@ -58,25 +70,23 @@ function getTouchButtonRects(w, h, ratio, topOffset = 0, bottomGap = 10, showTou
   // Accelerate buttons (bottom corners) - only visible when showTouchButtons is true
   if (showTouchButtons) {
     buttons.push(
-      { type: 'thrust', x: margin, y: bottomBtnY, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)', hitX: margin - hitMargin, hitY: bottomBtnY - hitMargin, hitW: btnSize + hitMargin * 2, hitH: btnSize + hitMargin * 2 },
-      { type: 'thrust', x: w - btnSize - margin, y: bottomBtnY, w: btnSize, h: btnSize, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)', hitX: w - btnSize - margin - hitMargin, hitY: bottomBtnY - hitMargin, hitW: btnSize + hitMargin * 2, hitH: btnSize + hitMargin * 2 }
+      { type: 'thrust', x: margin, y: bottomBtnY, w: accelerateWidth, h: accelerateHeight, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)', hitX: margin - hitMargin, hitY: bottomBtnY - hitMargin, hitW: accelerateWidth + hitMargin * 2, hitH: accelerateHeight + hitMargin * 2 },
+      { type: 'thrust', x: w - accelerateWidth - margin, y: bottomBtnY, w: accelerateWidth, h: accelerateHeight, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)', hitX: w - accelerateWidth - margin - hitMargin, hitY: bottomBtnY - hitMargin, hitW: accelerateWidth + hitMargin * 2, hitH: accelerateHeight + hitMargin * 2 }
     );
   }
 
   // Fire button (always top-right, below HUD) - visible when showTouchButtons OR isMobile
   if (showTouchButtons || isMobile) {
     buttons.push(
-      { type: 'fire', x: w - btnSize - margin, y: topY, w: btnSize, h: btnSize, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)', hitX: w - btnSize - margin - hitMargin, hitY: topY - hitMargin, hitW: btnSize + hitMargin * 2, hitH: btnSize + hitMargin * 2 }
+      { type: 'fire', x: w - fireWidth - margin, y: topY, w: fireWidth, h: fireHeight, label: 'X', font: '20px Arial', color: 'rgba(255, 0, 0, 0.2)', activeColor: 'rgba(255, 0, 0, 0.5)', hitX: w - fireWidth - margin - hitMargin, hitY: topY - hitMargin, hitW: fireWidth + hitMargin * 2, hitH: fireHeight + hitMargin * 2 }
     );
   }
 
   // Rotate buttons (top-left corner, below HUD) - only visible when showTouchButtons is true
   if (showTouchButtons) {
-    const rotateSize = 40;
-    const rotateGap = 3; // Reduced gap between rotate buttons
     buttons.push(
-      { type: 'rotateLeft', x: margin, y: topY, w: rotateSize, h: rotateSize, label: '←', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)', hitX: margin - hitMargin, hitY: topY - hitMargin, hitW: rotateSize + hitMargin + rotateGap, hitH: rotateSize + hitMargin * 2 },
-      { type: 'rotateRight', x: margin + rotateSize + rotateGap, y: topY, w: rotateSize, h: rotateSize, label: '→', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)', hitX: margin + rotateSize + rotateGap - hitMargin, hitY: topY - hitMargin, hitW: rotateSize + hitMargin * 2, hitH: rotateSize + hitMargin * 2 }
+      { type: 'rotateLeft', x: margin, y: topY, w: rotateWidth, h: rotateHeight, label: '←', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)', hitX: margin - hitMargin, hitY: topY - hitMargin, hitW: rotateWidth + hitMargin + rotateGap, hitH: rotateHeight + hitMargin * 2 },
+      { type: 'rotateRight', x: margin + rotateWidth + rotateGap, y: topY, w: rotateWidth, h: rotateHeight, label: '→', font: '18px Arial', color: 'rgba(0, 100, 255, 0.2)', activeColor: 'rgba(0, 100, 255, 0.5)', hitX: margin + rotateWidth + rotateGap - hitMargin, hitY: topY - hitMargin, hitW: rotateWidth + hitMargin * 2, hitH: rotateHeight + hitMargin * 2 }
     );
   }
 
