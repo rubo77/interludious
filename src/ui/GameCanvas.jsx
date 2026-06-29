@@ -70,8 +70,8 @@ function getTouchButtonRects(w, h, ratio, topOffset = 0, bottomGap = 10, showTou
   // Accelerate buttons (bottom corners) - only visible when showTouchButtons is true
   if (showTouchButtons) {
     buttons.push(
-      { type: 'thrust', x: margin, y: bottomBtnY, w: accelerateWidth, h: accelerateHeight, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)', hitX: margin - hitMargin, hitY: bottomBtnY - hitMargin, hitW: accelerateWidth + hitMargin * 2, hitH: accelerateHeight + hitMargin * 2 },
-      { type: 'thrust', x: w - accelerateWidth - margin, y: bottomBtnY, w: accelerateWidth, h: accelerateHeight, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)', hitX: w - accelerateWidth - margin - hitMargin, hitY: bottomBtnY - hitMargin, hitW: accelerateWidth + hitMargin * 2, hitH: accelerateHeight + hitMargin * 2 }
+      { type: 'accelerate', x: margin, y: bottomBtnY, w: accelerateWidth, h: accelerateHeight, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)', hitX: margin - hitMargin, hitY: bottomBtnY - hitMargin, hitW: accelerateWidth + hitMargin * 2, hitH: accelerateHeight + hitMargin * 2 },
+      { type: 'accelerate', x: w - accelerateWidth - margin, y: bottomBtnY, w: accelerateWidth, h: accelerateHeight, label: '↑', font: '20px Arial', color: 'rgba(0, 255, 0, 0.2)', activeColor: 'rgba(0, 255, 0, 0.5)', hitX: w - accelerateWidth - margin - hitMargin, hitY: bottomBtnY - hitMargin, hitW: accelerateWidth + hitMargin * 2, hitH: accelerateHeight + hitMargin * 2 }
     );
   }
 
@@ -301,7 +301,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         buttonPointerIds.current.add(e.pointerId);
         switch (btn.type) {
           case 'pod': setTouchActive(true); setShieldActive(true); break;
-          case 'thrust': setAccelerateActive(true); break;
+          case 'accelerate': setAccelerateActive(true); break;
           case 'fire': setFireActive(true); break;
           case 'rotateLeft': setRotateLeftActive(true); break;
           case 'rotateRight': setRotateRightActive(true); break;
@@ -353,7 +353,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
             // Deactivate old button
             switch (currentButtonType) {
               case 'pod': setTouchActive(false); setShieldActive(false); break;
-              case 'thrust': setAccelerateActive(false); break;
+              case 'accelerate': setAccelerateActive(false); break;
               case 'fire': setFireActive(false); break;
               case 'rotateLeft': setRotateLeftActive(false); break;
               case 'rotateRight': setRotateRightActive(false); break;
@@ -362,7 +362,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
             pointerButtonMap.current.set(e.pointerId, newButton.type);
             switch (newButton.type) {
               case 'pod': setTouchActive(true); setShieldActive(true); break;
-              case 'thrust': setAccelerateActive(true); break;
+              case 'accelerate': setAccelerateActive(true); break;
               case 'fire': setFireActive(true); break;
               case 'rotateLeft': setRotateLeftActive(true); break;
               case 'rotateRight': setRotateRightActive(true); break;
@@ -390,7 +390,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
           buttonPointerIds.current.delete(e.pointerId);
           switch (buttonType) {
             case 'pod': setTouchActive(false); setShieldActive(false); break;
-            case 'thrust': setAccelerateActive(false); break;
+            case 'accelerate': setAccelerateActive(false); break;
             case 'fire': setFireActive(false); break;
             case 'rotateLeft': setRotateLeftActive(false); break;
             case 'rotateRight': setRotateRightActive(false); break;
@@ -1547,7 +1547,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         let active = false;
         switch (btn.type) {
           case 'pod': active = touchActive; break;
-          case 'thrust': active = accelerateActive; break;
+          case 'accelerate': active = accelerateActive; break;
           case 'fire': active = fireActive; break;
           case 'rotateLeft': active = rotateLeftActive; break;
           case 'rotateRight': active = rotateRightActive; break;

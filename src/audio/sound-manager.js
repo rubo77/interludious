@@ -5,7 +5,7 @@ export class SoundManager {
   constructor() {
     this.engine = new AudioEngine();
     this.sounds = {
-      thrust: null,
+      accelerate: null,
       shoot: null,
       explosion: null,
       pickup: null,
@@ -28,8 +28,8 @@ export class SoundManager {
 
   playAccelerate() {
     if (this.currentAccelerateSound) return; // Already playing
-    
-    this.currentAccelerateSound = this.engine.playSound('thrust', 0.3, true);
+
+    this.currentAccelerateSound = this.engine.playSound('accelerate', 0.3, true);
   }
 
   stopAccelerate() {
