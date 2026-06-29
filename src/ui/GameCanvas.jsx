@@ -325,10 +325,12 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         if (Math.abs(dx) > JOYSTICK_THRESHOLD) {
           const rotationSpeed = dx * JOYSTICK_SPEED_FACTOR;
           joystickRotationSpeedRef.current = rotationSpeed;
+          console.log('[JOYSTICK] dx=' + dx.toFixed(2) + ' rotationSpeed=' + rotationSpeed.toFixed(4));
         } else {
           joystickRotationSpeedRef.current = 0;
           // Reset horizontal zero position to stop rotation when movement stops
           joystickStartRef.current.x = e.clientX;
+          console.log('[JOYSTICK] dx=' + dx.toFixed(2) + ' below threshold, reset rotation');
         }
         // Vertical movement: accelerate up
         if (dy < -JOYSTICK_THRESHOLD) {
@@ -696,6 +698,7 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
         if (joystickRotationSpeedRef.current !== 0) {
           ship.angle += joystickRotationSpeedRef.current;
           ship.rotation = (ship.angle * 180 / Math.PI) % 360;
+          console.log('[JOYSTICK_RENDER] rotationSpeed=' + joystickRotationSpeedRef.current.toFixed(4) + ' angle=' + ship.angle.toFixed(2));
         } else {
           // Keyboard/button rotation (continuous)
           if (keys['ArrowLeft'] || keys['a'] || keys['A'] || rotateLeftActive) {
