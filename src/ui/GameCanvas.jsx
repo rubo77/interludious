@@ -588,6 +588,19 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
+    // [DPR_RENDER] Match the canvas backing store to the device pixel ratio so the
+    // CSS-upscaled canvas (object-fit: contain) stays crisp on high-DPI screens.
+    // All drawing uses logical width/height coordinates; setTransform applies the
+    // DPR scale each frame so save/restore pairs remain balanced.
+    const dpr = window.devicePixelRatio || 1;
+    const backingW = Math.round(width * dpr);
+    const backingH = Math.round(height * dpr);
+    if (canvas.width !== backingW || canvas.height !== backingH) {
+      canvas.width = backingW;
+      canvas.height = backingH;
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
     // Enable anti-aliasing and smooth rendering
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
