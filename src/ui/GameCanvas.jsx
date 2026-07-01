@@ -1592,21 +1592,46 @@ export default function GameCanvas({ width = GAME_WIDTH, height = GAME_HEIGHT, o
       // Render particles
       particleSystem.current.render(ctx, camera.x, camera.y);
 
-      // X-axis wrapping based on level width, not canvas width
-      // Only wrap if the ship is not colliding with walls at the boundary
+      // X-axis wrapping based on level width, not canvas width.
+      // Only wrap if the crossing body is not blocked by a wall at the boundary.
+      // While the pod is docked (towed), ship and pod must wrap in the SAME frame
+      // by the SAME offset. Otherwise the tether vector keeps the length it had
+      // before only one of them teleported, stretching across the whole level and
+      // springing the pair back violently. So as soon as either one crosses an
+      // edge, both are shifted together and the tether vector stays identical.
       if (level && tilesetLoaded) {
         const levelWidth = level.width * 16; // scaled tile size
-        if (ship.x < 0) {
-          // Check if there's a wall at the right boundary before wrapping
-          const tileAtRight = tileRenderer.current.getTileAt(level, levelWidth - 1, Math.floor(ship.y / 16));
-          if (!tileAtRight || [' ', '.'].includes(tileAtRight)) {
-            ship.x = levelWidth;
+        const isWall = (tile) => !(!tile || [' ', '.'].includes(tile));
+        // Offset that would wrap a body to the opposite side (0 if not over an edge).
+        const crossingOffset = (body) => {
+          if (body.x < 0) return levelWidth;
+          if (body.x > levelWidth) return -levelWidth;
+          return 0;
+        };
+        // Tile in the boundary column the body enters after wrapping by `offset`.
+        const boundaryTile = (body, offset) => {
+          const col = offset > 0 ? levelWidth - 1 : 0;
+          return tileRenderer.current.getTileAt(level, col, Math.floor(body.y / 16));
+        };
+
+        if (pod && pod.active && pod.towed) {
+          // Whichever of the two reaches the edge first drags the other along.
+          const offset = crossingOffset(ship) || crossingOffset(pod);
+          if (offset !== 0 && !isWall(boundaryTile(ship, offset)) && !isWall(boundaryTile(pod, offset))) {
+            ship.x += offset;
+            pod.x += offset;
           }
-        } else if (ship.x > levelWidth) {
-          // Check if there's a wall at the left boundary before wrapping
-          const tileAtLeft = tileRenderer.current.getTileAt(level, 0, Math.floor(ship.y / 16));
-          if (!tileAtLeft || [' ', '.'].includes(tileAtLeft)) {
-            ship.x = 0;
+        } else {
+          const shipOffset = crossingOffset(ship);
+          if (shipOffset !== 0 && !isWall(boundaryTile(ship, shipOffset))) {
+            ship.x += shipOffset;
+          }
+          // A free (off-holder, untethered) pod wraps on its own too.
+          if (pod && pod.active && !pod.onHolder) {
+            const podOffset = crossingOffset(pod);
+            if (podOffset !== 0 && !isWall(boundaryTile(pod, podOffset))) {
+              pod.x += podOffset;
+            }
           }
         }
       }
